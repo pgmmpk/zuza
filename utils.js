@@ -98,36 +98,6 @@ function createDirectories(dir, callback) {
 	}
 }
 
-function renameAndOverride(source, target, callback) {
-	fs.stat(target, function(err, stat) {
-		if (!err) {
-			fs.unlink(target, function(err) {
-				if(err) {
-					callback('Failed to delete old copy of "' + target + '": ' + err);
-				} else {
-					fs.rename(source, target, callback);
-				}
-			});
-		} else {
-			// make sure that directory exists
-			var dir = target.slice(0, target.lastIndexOf('/'));
-			fs.stat(dir, function(err) {
-				if (err) {
-					createDirectories(dir, function(err) {
-						if (err) {
-							callback('Failed to create directories "' + dir + '": ' + err); // FIXME: could be a race condition
-						} else {
-							fs.rename(source, target, callback);
-						}
-					});
-				} else {
-					fs.rename(source, target, callback);
-				}
-			});
-		}
-	});
-}
-
 function rebind(target, source) {
 	var methods = Array.prototype.slice.call(arguments, 2);
 	
@@ -193,58 +163,6 @@ function $feeder(scope) {
 	};
 	
 	return feeder;
-}
-
-/**
- * Lists directories in root in descending order. Optionally it can be instructed to
- * return only directories that are greater or equal to 'from'. If 'exact' is true, it
- * returns only one directory that matches 'from'.
- * 
- * @param root {string} - root to scan
- * @param from		  - null or directory to stop scanning at
- * @param exact		 - false or true to ask for an exact match
- * @param callback	  - following events are defined:
- * 		* callback.error - called on error
- * 		* callback.data  - called on every directory
- * 		* done		   - called when no more data
- */
-function list(root, from, exact, callback) {
-	
-	listDir(root, function(err, dirs, files) {
-		
-		if (err) {
-			callback.error(err);
-			return;
-		} 
-
-		dirs.sort(sortByName(-1));
-
-		var i;
-		if (from) {
-			for (i = dirs.length - 1; i >= 0; i--) {
-				if (dirs[i].name >= from) {
-					dirs.length = i + 1; // truncate to names greater or equal to 'from'
-					break;
-				}
-			}
-			
-			if (exact && dirs.length) {
-				dirs = dirs.slice(dirs.length - 1);
-			}
-		} 
-		
-		i = 0;
-		(function next() {
-			var dir = dirs[i++];
-			if (!dir) {
-				callback.done();
-			} else {
-				setImmediate(function() {
-					callback.data(dir, next);
-				});
-			}
-		})();
-	});
 }
 
 function isPublic(f) {
