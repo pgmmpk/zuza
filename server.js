@@ -28,11 +28,21 @@ function ensureAuthenticated(req, res, next) {
 
 	try {
 		req.username = user.checkAuthToken(token);
-		return next();
 	} catch (error) {
 		console.log('AUTHENTICATION ERROR:', error);
-		res.send(401);
+		return res.send(401);
 	}
+	
+	user.read(req.username).then(function(user) {
+		if (!user) {
+			return res.send(401);
+		}
+		
+		next();
+	}, function(error) {
+		console.log('ERROR reading user DB', error);
+		return res.send(500);
+	})
 }
 
 function ensureAdminRole(req, res, next) {
