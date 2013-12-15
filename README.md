@@ -12,7 +12,8 @@ What user can do with his files?
 * Make public
 * Make private
 
-"Public" files are seen by other registered users (but others can only download them).
+"Public" files are seen by other registered users (but others can only download them). "Private" files
+are private - only the owner can see and modify them.
 
 Files are organized in a tree-like structure by date they were uploaded, like this:
 
