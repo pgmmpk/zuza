@@ -34,6 +34,11 @@ install required dependencies by running following command from the project root
 
 	npm install
 
+Then, make appropriate changes to the `config.js` file (see next section for the guidelines).
+
+To start server:
+
+	node server.js
 
 ## Configuration
 
@@ -45,7 +50,11 @@ Big picture: you will need to specify:
 2. directory where to store uploaded files
 3. admin user attributes (used only when bootstraping user database)
 4. location of user database. Make sure that initially it does NOT exist - it will be lazily created and 
-   populated with a single admin user.
+   populated with a single admin user. Use this admin user credentials to log into the application. Then go to
+   the "User list", edit admin user and change password. This is important, because original admin password is 
+   in `config.js`. Updated password (and passwords of users created via web interface) are stored in secure way in
+   `users.json`. To be precise: passwords are **not** stored there, but only password's HMAC hash that used 
+   for authentication.
 
 For more, see comments in the default `config.js`.
 
