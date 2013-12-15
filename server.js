@@ -35,6 +35,7 @@ function ensureAuthenticated(req, res, next) {
 	
 	user.read(req.username).then(function(user) {
 		if (!user) {
+			console.log('AUTHENTICATION ERROR: valid token, but user not found in the DB');
 			return res.send(401);
 		}
 		
@@ -153,10 +154,6 @@ app.post('/api/upload', ensureAuthenticated, function(req, res) {
 });
 
 /** *** API *** */
-
-function isPublic(f) {
-	return 0 !== (040 & f.stat.mode); // group read bit is used as 'public' indicator
-}
 
 app.post('/api/login', function(req, res) {
 
