@@ -36,39 +36,45 @@ install required dependencies by running following command from the project root
 
 	npm install
 
-Then, make appropriate changes to the `config.js` file (see next section for the guidelines).
-
-To start server:
+And start server:
 
 	node server.js
+
+Open your browser, navigare to
+
+	http://localhost:3000
+
+Log in using `admin`/`password`.
+
+Go to "User List", edit `admin` and change the password to something more secure. This is important, because original
+admin password is in `config.js` in cleartext. Server does not store passwords in its user database. Instead, it stores
+secure hash.
+
+Its a good idea not to use `admin` for file uploads. Go to "User List" and create a user with no administator 
+priveleges. Re-login and start uploading.
 
 ## Configuration
 
 All configurable parameters are in the `config.js` file in the root of the project directory tree.
 
-Big picture: you will need to specify:
+Big picture: you will probably want to review the following:
 
 1. server port (default is 3000)
 2. directory where to store uploaded files
-3. admin user attributes (used only when bootstraping user database)
-4. location of user database. Make sure that initially it does NOT exist - it will be lazily created and 
-   populated with a single admin user. Use this admin user credentials to log into the application. Then go to
-   the "User list", edit admin user and change password. This is important, because original admin password is 
-   in `config.js` in cleartext. Updated password (and passwords of users created via web interface) are stored in secure way in
-   `users.json`. To be precise: passwords are **not** stored there, but only password's HMAC hash that is used 
-   for authentication.
+3. location of user database. Make sure that initially it does NOT exist - it will be lazily created and 
+   populated with a single admin user.
+
+For more, see comments in the `config.js`.
 
 ## Testing
 
-To run unit tests, start server and navigate to
+To run unit tests, start server and navigate to (relatively to the application root).
 
 	/test
 
-relatively to the application root. If server is running on `http://localhost:3000` enter following url:
+If server is running on `http://localhost:3000` enter the following url:
 
 	http://localhost:3000/test
-
-For more, see comments in the default `config.js`.
 
 ## License
 MIT
