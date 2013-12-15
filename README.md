@@ -68,7 +68,7 @@ For more, see comments in the `config.js`.
 
 ## Testing
 
-To run unit tests, start server and navigate to (relatively to the application root).
+To run unit tests, start server and navigate to (relatively to the application root):
 
 	/test
 
