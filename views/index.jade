@@ -1,0 +1,54 @@
+doctype 5
+html(ng-app='zuza')
+	head
+		title Zuza
+		meta(charset='utf-8')
+		base(href='/')
+		link(rel='stylesheet', href='/stylesheets/style.css')
+		link(href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css", rel="stylesheet")
+		link(href="//netdna.bootstrapcdn.com/bootstrap/3.0.2/css/bootstrap.min.css", rel="stylesheet")
+		script(src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js")
+		script(src="//netdna.bootstrapcdn.com/bootstrap/3.0.2/js/bootstrap.min.js")
+		script(src='//ajax.googleapis.com/ajax/libs/angularjs/1.2.0/angular.min.js')
+		script(src='//ajax.googleapis.com/ajax/libs/angularjs/1.2.0/angular-route.min.js')
+		script(src='vendor/angular-translate.min.js')
+		script(src="//cdnjs.cloudflare.com/ajax/libs/d3/3.3.10/d3.min.js")
+
+		script(src='js/app.js')
+		script(src='js/services.js')
+		script(src='js/controllers.js')
+		script(src='js/translate.js')
+		script(src='components/fileUpload/zuza.fileUpload.js')
+		link(href='components/fileUpload/zuza.fileUpload.css', rel='stylesheet')
+		script(src='components/utils/zuza.utils.js')
+		script(src='components/tree/zuza.tree.js')
+		link(href='components/tree/zuza.tree.css', rel='stylesheet')
+
+	body(ng-controller='RootCtrl')
+		.navbar.navbar-default(role='navigation')
+			.navbar-header
+				a.navbar-brand(ng-href='/') {{'Zuza' | translate}}
+
+			.collapse.navbar-collapse
+				ul.nav.navbar-nav(ng-show='user.username')
+					li(ng-class='{"active": location == ""}')
+						a(href='/') {{'title-' | translate}}
+					li(ng-class='{"active": location == "public"}')
+						a(href='/public') {{'title-public' | translate}}
+					li(ng-class='{"active": location == "files"}')
+						a(href='/files') {{'title-files' | translate}}
+					li(ng-show='user.role=="admin"', ng-class='{"active": location == "user"}')
+						a(ng-href='/user') {{'Users' | translate}}
+
+				ul.nav.navbar-nav.navbar-right(ng-show='user.username')
+					li.dropdown
+						a.dropdown-toggle(data-toggle='dropdown') {{'Welcome, user' | translate:user}}
+							b.caret
+						ul.dropdown-menu
+							li
+								a(ng-href='/settings') {{'Settings' | translate}}
+							li.divider
+							li
+								a(ng-click='logout()') {{'Logout' | translate}}
+
+		.container(ng-view)

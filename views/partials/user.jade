@@ -1,0 +1,32 @@
+.row
+	.col-md-6.col-md-offset-3
+
+		form.form
+			.error(ng-show='error') {{error | translate}}
+			.loading(ng-show='loading') {{'Loading...' | translate}}
+		
+			.form-group
+				label {{'Username' | translate}}
+				input.form-control(type='text', ng-show='creating', autofocus, ng-model='currentUser.username', required, placeholder="{{'Username' | translate}}")
+				.form-control-static(ng-hide='creating')
+					p {{currentUser.username}}
+			
+			.form-group
+				label {{'Full Name' | translate}}
+				input.form-control(type='text', ng-model='currentUser.name', required, placeholder="{{'Full Name' | translate}}")
+
+			.form-group
+				label {{'Password' | translate}}
+				input.form-control(type='password', ng-model='currentUser.password', required, placeholder="{{'Password' | translate}}")
+			
+			.form-group
+				label {{'Confirm password' | translate}}
+				input.form-control(type='password', ng-model='validatePassword', required, placeholder="{{'Confirm password' | translate}}")
+			
+			.checkbox
+				label
+					input(type='checkbox', ng-model='currentUser.role', ng-true-value='admin', ng-false-value='') 
+					{{'Admin Role' | translate}}
+			
+			button.btn.btn-default(ng-click='save()', ng-enabled='!loading') {{'Save' | translate}}
+		

@@ -1,0 +1,29 @@
+.row
+	.col-md-6.col-md-offset-3
+		h2.text-center {{'Public files' | translate}}
+
+.row
+	.col-md-3
+		zuza-date-tree(tree='tree', activated='makeCurrent(node)')
+		
+	.col-md-6
+		.text-center(ng-hide='current.files || loading || error')
+			i {{'No files' | translate}}
+		.error(ng-show='error') {{error | translate}}
+		.loading(ng-show='loading') {{'Loading...' | translate}}
+		
+		.date-hdr(ng-show='current')
+			div {{current | langDate}}
+
+		.text-center(ng-show='loading')
+			i {{'Loading...' | translate}}
+		
+		table.table.table-nolines.table-condensed(ng-show='current.files')
+			tr(ng-repeat='f in current.files')
+				td.active-cursor(ng-click='download(f)', title="{{'Download' | translate}}") {{f.name}}
+				td.column-narrow {{f.size | zuzaBytes}}
+				td.column-narrow {{f.owner}}
+				td.column-thin
+					a.fa.fa-download.active-cursor(ng-click='download(f)', title="{{'Download' | translate}}")
+
+					

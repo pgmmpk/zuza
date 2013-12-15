@@ -1,0 +1,91 @@
+body {
+	padding: 20px;
+	font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+}
+
+a {
+	color: #00B7FF;
+}
+
+.table-nolines th, .table-nolines td { 
+	//border-top: none!important; 
+}
+
+.error {
+	color: crimson;
+}
+
+.active-cursor {
+	cursor: pointer;
+}
+
+.footer {
+	background-color: lightgray;
+	color: gray;
+}
+
+.footer td {
+	border-top: 1px solid gray !important;
+}
+
+h2 {
+	margin-top: 0!important;
+}
+.navbar {
+	margin-bottom: 15px!important;
+}
+
+.voffset  { margin-top: 2px; }
+.voffset1 { margin-top: 5px; }
+.voffset2 { margin-top: 10px; }
+.voffset3 { margin-top: 15px; }
+.voffset4 { margin-top: 30px; }
+.voffset5 { margin-top: 40px; }
+.voffset6 { margin-top: 60px; }
+.voffset7 { margin-top: 80px; }
+.voffset8 { margin-top: 100px; }
+.voffset9 { margin-top: 150px; }
+
+.since {
+	color: gray;
+	font-style: italic;
+	font-size: smaller;
+}
+
+.date-hdr {
+	height: 0;
+	width: 0;
+	position: relative;
+}
+
+.date-hdr > div {
+	width: 12em;
+	position: absolute;
+	right: 0;
+	text-align: right;
+	margin-right: 0.5em;
+	color: gray;
+	margin-top: -0.77em;
+	margin-bottom: 0.77em;
+	font-style: italic;
+	font-size: smaller;
+}
+.numfiles {
+	color: gray;
+	padding-left: 0.5em;
+}
+
+span.zuza-icon {
+	width: 1em;
+}
+
+td.column-narrow {
+	width: 6.5em;
+}
+td.column-thin {
+	width: 2em;
+}
+
+.active-color {
+	color: #2a6496!important;
+}

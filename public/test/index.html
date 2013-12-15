@@ -1,0 +1,32 @@
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Mocha Tests</title>
+	<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/mocha/1.13.0/mocha.css" />
+</head>
+<body>
+	<div id="mocha"></div>
+	<!--  <script src="jquery.js"></script> -->
+	<script src="../vendor/expect-0.2.0.js"></script>
+	<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+	<script src="//cdnjs.cloudflare.com/ajax/libs/mocha/1.13.0/mocha.js"></script>
+	<script>mocha.setup('bdd')</script>
+	
+	<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.0/angular.min.js"></script>
+	<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.0/angular-route.js"></script>
+	<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.0/angular-mocks.js"></script>
+
+	<script src="../components/utils/zuza.utils.js"></script>
+	<script src="../components/fileUpload/zuza.fileUpload.js"></script>
+
+	<script src="../components/utils/zuza.utilsSpec.js"></script>
+	<script src="../components/fileUpload/zuza.fileUploadSpec.js"></script>
+
+	<script>
+		mocha.checkLeaks();
+		mocha.globals(['jQuery']);
+		mocha.run();
+	</script>
+
+</body>
+</html>

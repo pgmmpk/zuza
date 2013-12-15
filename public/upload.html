@@ -1,0 +1,44 @@
+<html>
+<head>
+<meta charset='utf-8'>
+</head>
+
+<h1>Upload</h1>
+
+<form id='myform' action='/api/upload' method='POST' enctype='multipart/form-data' accept-charset="UTF-8">
+	<input id='myfiles' type='file' name='file'>
+	<button type='submit' value='Go'>Go</button>
+	<button onclick='async(this)'>Async</button>
+</form>
+<script>
+function async() {
+	var form = document.getElementById('myform');
+	var input = document.getElementById('myfiles');
+	var files = input.files;
+
+	console.log(form, files);
+
+	var fd = new FormData();
+	for(var i = 0; i < files.length; i++) {
+		fd.append("uploadedFile", files[i]);
+	}
+
+	var xhr = new XMLHttpRequest();
+	//xhr.upload.addEventListener("progress", uploadProgress, false);
+	//xhr.addEventListener("load", uploadComplete, false);
+	//xhr.addEventListener("error", function() {deferred.reject('failed');}, false);
+	//xhr.addEventListener("abort", function() {deferred.reject('aborted');}, false);
+	xhr.addEventListener("load", function() {
+		console.log('loaded')
+	}, false);
+	xhr.addEventListener("error", function(err) {
+		console.log('failed', err);
+	}, false);
+	xhr.open("POST", '/api/upload');
+	
+	xhr.send(fd);
+	
+	return false;
+}
+</script>
+</html>

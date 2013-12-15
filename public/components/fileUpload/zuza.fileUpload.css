@@ -1,0 +1,13 @@
+.zuza-progress-bar {
+    width: 100%;
+    min-width: 2em;
+    height: 8pt;
+    background-color: lightgray;
+    border-radius: 8px;
+}
+.zuza-uploaded {
+    padding: 0;
+    height: 8pt;
+    background-color: green;
+    border-radius: 8px;
+}

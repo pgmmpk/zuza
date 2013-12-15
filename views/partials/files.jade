@@ -1,0 +1,50 @@
+.row
+	.col-md-6.col-md-offset-3
+		h2.text-center {{'My files' | translate}}
+
+.row
+	.col-md-3
+		zuza-date-tree(tree='tree', activated='makeCurrent(node)')
+
+	.col-md-6
+		.text-center(ng-hide='current.files || loading || error')
+			i {{'No files. Use "Upload" button to upload files.' | translate}}
+		.error(ng-show='error') {{error | translate}}
+		.loading(ng-show='loading') {{'Loading...' | translate}}
+			
+		.date-hdr(ng-show='current')
+			div {{current | langDate}}
+			
+		table.table.table-nolines.table-condensed(ng-show='current.files')
+			tr(ng-repeat='f in current.files track by f.fileId')
+				td
+					input(type='checkbox', ng-model='f.selected', ng-click='updateSelection()')
+				td
+					span.zuza-icon.fa.fa-lock(ng-hide='f.public', title="{{'Private' | translate}}")
+					span.zuza-icon.fa.fa-eye(ng-show='f.public', title="{{'Public' | translate}}")
+				td.active-cursor(ng-click='download(f)', title="{{'Download' | translate}}") {{f.name}}
+				td.column-narrow {{f.size | zuzaBytes}}
+				td.column-thin
+					a.fa.fa-download.active(ng-click='download(f)', title="{{'Download' | translate}}")
+			tr.footer(ng-show='current.files.length > 1')
+				td
+					input(type='checkbox', ng-model='selectAll', ng-change='selectOrUnselectAll()')
+				td.active-cursor(colspan='4', ng-click='selectAll = !selectAll; selectOrUnselectAll()') {{'Select All/None' | translate}}
+
+	.col-md-3
+		.btn-toolbar(ng-show='current.files')
+			a.btn.btn-default.fa.fa-lock.btn-lg(ng-click='setPrivate()', ng-disabled='!selected', title="{{'Set Private' | translate}}")
+			a.btn.btn-default.fa.fa-eye.fa-lg.btn-lg(ng-click='setPublic()', ng-disabled='!selected', title="{{'Set Public' | translate}}")
+			a.btn.btn-danger.fa.fa-trash-o.fa-lg.btn-lg(ng-click='delete()', ng-disabled='!selected', title="{{'Delete' | translate}}")
+
+.row.voffset2
+	.col-md-6.col-md-offset-3
+		
+		zuza-file-upload(post-url="data.uploadUrl", api='uploadApi', text-browse="{{'Upload' | translate}}", text-wait="{{'Wait, please' | translate}}", text-upload="{{'Upload all' | translate}}", text-clear="{{'Clear all' | translate}}", text-header="{{'Files to be uploaded' |translate}}", on-finished='refresh()')
+
+			form.form
+				.checkbox
+					label
+						input(type='checkbox', ng-model='data.uploadAsPublic')
+						{{'... and make public' | translate}}
+		

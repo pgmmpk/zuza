@@ -1,0 +1,23 @@
+.row
+	.col-md-6.col-md-offset-3
+		h2.text-center {{'Users' | translate}}
+
+.row
+	.col-md-6.col-md-offset-3
+
+		.error(ng-show='error') {{error | translate}}
+		.loading(ng-show='loading') {{'Loading...' | translate}}
+		
+		table.table.table-nolines.table-condensed
+			tr(ng-repeat='u in users')
+				td {{u.username}}
+				td {{u.name}}
+				td {{u.role}}
+				td
+					a.fa.fa-edit(href="/user/{{u.username}}")
+				td
+					a.fa.fa-times(ng-click="remove(u)")
+
+	.col-md-3		
+		a.btn.btn-default(href='/user/create') {{'Add user' | translate}}
+		

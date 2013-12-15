@@ -1,0 +1,15 @@
+.row
+	.col-md-6.col-md-offset-3
+		h2 {{'Settings' | translate}}
+		form.form
+			.form-group
+				label {{'Language' | translate}}
+					div
+						.radio
+							label 
+								input(type='radio', ng-model='lang', name='lang-radio', value='en') 
+								| English
+						.radio
+							label
+								input(type='radio', ng-model='lang', name='lang-radio', value='ru') 
+								| Русский

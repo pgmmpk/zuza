@@ -1,0 +1,13 @@
+ul.tree {
+	list-style-type: none;
+	margin: 0;
+	padding: 0 0 0 2em;
+}
+
+div.tree-node > i {
+	width: 1em;
+}
+
+span.selected {
+	font-weight: bold;
+}
