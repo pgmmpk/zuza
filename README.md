@@ -56,6 +56,16 @@ Big picture: you will need to specify:
    `users.json`. To be precise: passwords are **not** stored there, but only password's HMAC hash that is used 
    for authentication.
 
+## Testing
+
+To run unit tests, start server and navigate to
+
+	/test
+
+relatively to the application root. If server is running on `http://localhost:3000` enter following url:
+
+	http://localhost:3000/test
+
 For more, see comments in the default `config.js`.
 
 ## License
