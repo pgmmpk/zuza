@@ -14,5 +14,5 @@ results
 npm-debug.log
 node_modules
 .project
-datastore
+datastore/2*
 users.json
