@@ -109,7 +109,7 @@
              */
             download: function(fileId) {
                 $window.open('/api/download?fileId=' + encodeURIComponent(fileId) +
-                                '&authorization=' + encodeURIComponent(Auth.getToken()));
+                                '&authorization=' + encodeURIComponent(Auth.getUser().token));
             },
 
             /**
