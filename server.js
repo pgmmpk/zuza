@@ -7,7 +7,6 @@ var express = require('express'),
 	fs      = require('fs'), 
 	Busboy  = require('busboy'), 
 	utils   = require('./utils'), 
-	utf8    = require('utf8'),
 	config  = require('./config');
 
 function ensureAuthenticated(req, res, next) {
