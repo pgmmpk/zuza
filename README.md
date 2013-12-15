@@ -1,5 +1,7 @@
 ### Zuza
 
+[![Build Status](https://travis-ci.org/pgmmpk/zuza.png)](https://travis-ci.org/pgmmpk/zuza)
+
 Zuza is a simple file sharing server. Registered users can upload files to the server.
 Administrator can add/remove/edit users. There is no self-registration.
 
