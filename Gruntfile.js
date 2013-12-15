@@ -13,7 +13,8 @@ module.exports = function (grunt) {
 	grunt.loadNpmTasks('grunt-ngdocs');
 
 	// Default task.
-	grunt.registerTask('default', ['jshint', 'mocha']);
+	grunt.registerTask('default', ['jshint']);
+	//grunt.registerTask('default', ['jshint', 'mocha']);
 
 	// Project configuration.
 	grunt.initConfig({

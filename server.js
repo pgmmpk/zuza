@@ -42,7 +42,7 @@ function ensureAuthenticated(req, res, next) {
 	}, function(error) {
 		console.log('ERROR reading user DB', error);
 		return res.send(500);
-	})
+	});
 }
 
 function ensureAdminRole(req, res, next) {
