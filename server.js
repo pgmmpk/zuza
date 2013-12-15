@@ -63,7 +63,7 @@ function ensureAdminRole(req, res, next) {
 app.set('port', process.env.PORT || 3000);
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
-app.use(express.favicon(__dirname + '/public/images/favicon.ico'));
+app.use(express.favicon(__dirname + '/graphics/favicon.ico'));
 app.use(express.json());
 app.use(app.router);
 app.use(express.static(path.join(__dirname, 'public')));
