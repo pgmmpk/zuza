@@ -52,7 +52,7 @@ Big picture: you will need to specify:
 4. location of user database. Make sure that initially it does NOT exist - it will be lazily created and 
    populated with a single admin user. Use this admin user credentials to log into the application. Then go to
    the "User list", edit admin user and change password. This is important, because original admin password is 
-   in `config.js` in cleartext. Updated password (and passwords of users created via web interface) are stored in secure way in
+   in `config.js`. Updated password (and passwords of users created via web interface) are stored in secure way in
    `users.json`. To be precise: passwords are **not** stored there, but only password's HMAC hash that is used 
    for authentication.
 
