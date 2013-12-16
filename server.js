@@ -4,10 +4,10 @@ var express = require('express'),
 	server  = http.createServer(app), 
 	user    = require('./user'), 
 	path    = require('path'), 
-	fs      = require('fs'), 
+	q       = require('q'),
 	Busboy  = require('busboy'), 
-	utils   = require('./utils'), 
-	config  = require('./config');
+	config  = require('./config'),
+	store   = require('./filestore').FileStore(config.DATASTORE);
 
 function ensureAuthenticated(req, res, next) {
 	var token;
@@ -100,59 +100,6 @@ function parseIdPath(dir) {
 	};
 }
 
-app.post('/api/upload', ensureAuthenticated, function(req, res) {
-	var idPath = buildIdPath() + '/' + req.username;
-	
-	var busboy = new Busboy({ 
-		headers: req.headers,
-		defCharset: 'utf-8',
-		limits: {
-			fileSize: config.FILE_SIZE_LIMIT
-		}
-	});
-
-	var makePublic = req.query['public'] === 'true';
-	var infiles = 0, outfiles = 0, endSeen = false;
-	
-	function maybeDone() {
-		if (endSeen && infiles === outfiles) {
-			res.send(200);
-		}
-	}
-	
-	busboy.on('error', function(err) {
-		console.log('ERROR in upload', err);
-		res.send(500);
-	
-	}).on('file', function(field, stream, filename) {
-		var mode = makePublic ? 0640 : 0600;
-		
-		infiles += 1;
-		
-		var fname = config.DATASTORE + '/' + idPath + '/' + filename.replace('..', '');
-		var ostream = fs.createWriteStream(fname, {mode: mode});
-		ostream.on('close', function() {
-			outfiles += 1;
-			maybeDone();
-		});
-			
-		stream.pipe(ostream);
-
-	}).on('end', function() {
-		endSeen = true;
-		maybeDone();
-	});
-
-	utils.createDirectories(config.DATASTORE + '/' + idPath, function(err) {
-		if (err) {
-			console.log('ERROR: failed to create directory', idPath, err);
-			return res.send(500);
-		}
-
-		req.pipe(busboy);
-	});
-});
-
 /** *** API *** */
 
 app.post('/api/login', function(req, res) {
@@ -161,27 +108,28 @@ app.post('/api/login', function(req, res) {
 		res.json(user);
 	}, function(error) {
 		res.send(403);
-	});
+	}).done();
 });
 
 app.get('/api/user', ensureAuthenticated, ensureAdminRole, function(req, res) {
 	
 	user.list().then(function(users) {
 		res.json(users);
-	}, function(err) {
+	}).fail(function(err) {
 		console.log('ERROR: failed to list users (io failed): ', err);
 		res.send(500);
-	});
+	}).done();
 });
 
 app.get('/api/user/:username', ensureAuthenticated, ensureAdminRole, function(req, res) {
 	
 	user.read(req.params.username).then(function(user) {
 		res.json(user);
-	}, function(err) {
+	
+	}).fail(function(err) {
 		console.log('ERROR: failed to read user (io failed): ', err);
 		res.send(500);
-	});
+	}).done();
 });
 
 app.post('/api/user/:username', ensureAuthenticated, ensureAdminRole, function(req, res) {
@@ -207,43 +155,73 @@ app.del('/api/user/:username', ensureAuthenticated, ensureAdminRole, function(re
 	
 	user.del(req.params.username).then(function() {
 		res.send(200);
-	}, function(err) {
+	}).fail(function(err) {
 		console.log('ERROR: failed to delete user (io failed): ', err);
 		res.send(500);
+	}).done();
+});
+
+app.post('/api/upload', ensureAuthenticated, function(req, res) {
+	var idPath = buildIdPath() + '/' + req.username;
+	
+	var busboy = new Busboy({ 
+		headers: req.headers,
+		defCharset: 'utf-8',
+		limits: {
+			fileSize: config.FILE_SIZE_LIMIT
+		}
 	});
+
+	var makePublic = req.query['public'] === 'true';
+	var promises = [];
+	
+	busboy.on('error', function(err) {
+		console.log('ERROR in upload', err);
+		res.send(500);
+	
+	}).on('file', function(field, stream, filename) {
+
+		promises.push( store.saveStreamToFile(stream, idPath + '/' + filename.replace('..', ''), makePublic) );
+	}).on('end', function() {
+		
+		q.all(promises).then(function() {
+			res.send(200);
+		}).fail(function(error) {
+			console.log('ERROR: saving uploaded file(s)', error);
+			res.send(500);
+		}).done();
+	});
+
+	req.pipe(busboy);
 });
 
 app.get('/api/files', ensureAuthenticated, function(req, res) {
 
 	var date = req.query.date;
 	var wantPublic = req.query['public'];
-	
-	utils.filesAtDate(config.DATASTORE, date, function(err, files) {
-		
-		if (err) {
-			console.log('ERROR scanning files: ' + err);
-			res.send(500);
-			return;
-		}
 
+	store.filesAt(date, function(f) {
 		if (wantPublic) {
-			files = files.filter(function(f) {
-				return f['public'];
-			});
+			return f['public'];
 		} else {
-			files = files.filter(function(f) {
-				return f.owner === req.username;
-			});
+			return f.owner === req.username;
 		}
+	}).then(function(files) {
 
 		res.json(files);
-	});
+	}).fail(function(error) {
+		
+		console.log('ERROR scanning files: ' + err);
+		res.send(500);
+	}).done();
 });
 
 app.post('/api/files', ensureAuthenticated, function(req, res) {
 
 	var action = req.body.action;
-
+	
+	var promises = [];
+	
 	req.body.fileIds.forEach(function(fileId) {
 		fileId = fileId.replace('..', ''); // security
 		var dirId = fileId.slice(0, fileId.lastIndexOf('/'));
@@ -261,106 +239,53 @@ app.post('/api/files', ensureAuthenticated, function(req, res) {
 		}
 
 		if (action === 'delete') {
-			fs.unlink(config.DATASTORE + '/' + fileId, function(err) {
-
-			});
-		} else if (action === 'makePublic') {
-			fs.chmod(config.DATASTORE + '/' + fileId, 0640, function(err) {
-
-			});
-		} else if (action === 'makePrivate') {
-			fs.chmod(config.DATASTORE + '/' + fileId, 0600, function(err) {
-
-			});
+			promises.push( store.deleteFile(fileId) );
+		} else if(action == 'makePublic') {
+			promises.push( store.makePublic(fileId) );
+		} else if(action == 'makePrivate') {
+			promises.push( store.makePrivate(fileId) );
+		} else {
+			console.log('ERROR: unknown action', action);
+			return res.send(500);
 		}
 	});
-
-	res.send(200);
+	
+	q.all(promises).then(function() {
+		res.send(200);
+	}).fail(function(error) {
+		console.log('ERROR: applying file action:', error);
+		return res.send(500);
+	}).done();
 });
 
 app.get('/api/dashboard', ensureAuthenticated, function(req, res) {
 
-	var collection = [];
-	var size = 0;
-
-	utils.readFiles(config.DATASTORE, req.query.olderThan, function(err, data, next) {
+	store.listFiles(config.MAXFILES, function(f) { return f['public']; }, req.query.olderThan).then(function(files) {
 		
-		if (err) {
-			console.log('ERROR scanning files: ' + err);
-			res.send(500);
-			return;
-		}
+		res.json(files);
 		
-		if (data === null) {
-			// no more
-			res.send(collection);
-			return;
-		}
-		
-		var files = data.files.filter(function(f) {
-			return f['public'];
-		});
-
-		if (files.length > 0) {
-			collection.push( {
-				dirId: data.dirId,
-				files: files,
-				
-				year : data.year,
-				month : data.month,
-				day : data.day
-			} );
-			
-			size += files.length;
-			
-			if (size > config.MAXFILES) {
-				res.send(collection);
-				return;
-			}
-		}
-
-		next();
-	});
+	}).fail(function(error) {
+		console.log('ERROR scanning files: ' + error);
+		res.send(500);
+	}).done();
 });
 
 app.get('/api/tree', ensureAuthenticated, function(req, res) {
 	var wantPublic = !!req.query['public'];
 
-	utils.readDateTree(config.DATASTORE, function(err, dates) {
-		
-		if (err) {
-			console.log('ERROR scanning files: ' + err);
-			res.send(500);
-			return;
+	store.dateTree(function(f) {
+		if (wantPublic) {
+			return f['public'];
+		} else {
+			return f.owner === req.username;
 		}
-		
-		var collection = [];
+	}).then(function(results) {
+		res.json(results);
 
-		dates.forEach(function(data) {
-			var files;
-
-			if (wantPublic) {
-				files = data.files.filter(function(f) {
-					return f['public'];
-				});
-			} else {
-				files = data.files.filter(function(f) {
-					return f.owner === req.username;
-				});
-			}
-			if (files.length) {
-				collection.push({
-					dirId: data.dirId,
-					year : data.year,
-					month : data.month,
-					day : data.day,
-					size : files.length
-				});
-			}
-		});
-		
-		res.json(collection);
-	});
+	}).fail(function(error) {
+		console.log('ERROR scanning files: ' + err);
+		res.send(500);
+	}).done();
 });
 
 app.get('/api/download', ensureAuthenticated, function(req, res) {
@@ -370,25 +295,24 @@ app.get('/api/download', ensureAuthenticated, function(req, res) {
 	var info = parseIdPath(dirId);
 
 	if (!info) {
-		res.send(500);
-		return;
+		return res.send(500);
 	}
-
-	fs.stat(config.DATASTORE + '/' + fileId, function(err, stat) {
-		if (err) {
-			console.log('ERROR: attempt to download non-existing file:',
-					fileId, req.userid, err);
-			res.send(500);
-		} else if (info.owner === req.userid || 0 !== (stat.mode & 0x20)) {
+	
+	store.stat(fileId).then(function(f) {
+		if(info.owner === req.username || f['public']) {
 			res.setHeader('Content-type', 'application/octet-stream');
 			res.setHeader('Content-disposition', 'attachment; filename=' + encodeURIComponent(fname));
-			fs.createReadStream(config.DATASTORE + '/' + fileId).pipe(res);
+
+			return store.readFileToStream(fileId, res).then(function() {
+				return res.send(200);
+			})
 		} else {
-			console.log('WARNING: attempt to download protected file:', fileId,
-					req.userid);
-			res.send(403); // permission denied
+			console.log('ERROR: denied download', req.username, fileId);
+			return res.send(403);
 		}
-	});
+	}).fail(function(error) {
+		console.log('ERROR: download failed', error);
+	}).done();
 });
 
 function renderIndex(req, res) {
