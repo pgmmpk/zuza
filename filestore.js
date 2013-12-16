@@ -76,7 +76,7 @@ function filesAt(root, date, filter) {
 						owner    : owner.name,
 						mtime    : Date.parse(f.stat.mtime)
 					};
-				})
+				});
 			}) );
 		});
 		
@@ -88,7 +88,7 @@ function filesAt(root, date, filter) {
 			files.filter(filter).forEach(function(f) {
 				allfiles.push(f);
 			});
-		})
+		});
 		
 		return allfiles;
 	});
@@ -211,20 +211,14 @@ function saveStreamToFile(root, readStream, fileId, asPublic) {
 		var date  = dirId.slice(0, dirId.lastIndexOf('/'));
 		var owner = dirId.slice(date.length + 1);
 		
-		console.log(dirId, date, owner, fileId)
-		
-		createDirectory(root, date, owner).fail(function(err) {
-			console.log(err);
-
-		}).then(function() {
+		createDirectory(root, date, owner).then(function() {
 			readStream.pipe( fs.createWriteStream(root + '/' + fileId, { mode: asPublic ? 0640 : 600 })).on('error', function(error) {
 				return defer.reject(error);
 				
 			}).on('close', function() {
 				defer.resolve();
 			});
-			
-		})
+		});
 	}
 
 	fs.exists(root + '/' + fileId, function(exists) {

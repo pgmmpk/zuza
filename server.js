@@ -240,9 +240,9 @@ app.post('/api/files', ensureAuthenticated, function(req, res) {
 
 		if (action === 'delete') {
 			promises.push( store.deleteFile(fileId) );
-		} else if(action == 'makePublic') {
+		} else if(action === 'makePublic') {
 			promises.push( store.makePublic(fileId) );
-		} else if(action == 'makePrivate') {
+		} else if(action === 'makePrivate') {
 			promises.push( store.makePrivate(fileId) );
 		} else {
 			console.log('ERROR: unknown action', action);
@@ -305,7 +305,8 @@ app.get('/api/download', ensureAuthenticated, function(req, res) {
 
 			return store.readFileToStream(fileId, res).then(function() {
 				return res.send(200);
-			})
+			});
+
 		} else {
 			console.log('ERROR: denied download', req.username, fileId);
 			return res.send(403);
