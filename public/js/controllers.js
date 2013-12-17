@@ -16,7 +16,7 @@
 		$scope.loading = true;
 		$scope.error = undefined;
 		Files.dashboard().then(function(collection) {
-			console.log('dashboard:', collection);
+			//console.log('dashboard:', collection);
 			$scope.collection = collection;
 			$scope.loading = false;
 			
