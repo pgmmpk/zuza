@@ -174,21 +174,39 @@ app.post('/api/upload', ensureAuthenticated, function(req, res) {
 
 	var makePublic = req.query['public'] === 'true';
 	var promises = [];
+	var numFailed = 0;
 	
 	busboy.on('error', function(err) {
+		
 		console.log('ERROR in upload', err);
 		res.send(500);
 	
 	}).on('file', function(field, stream, filename) {
+	
+		filename = filename.replace('..', '');
+		
+		var uploadPromise = store.saveStreamToFile(stream, idPath + '/' + filename, makePublic);
+		
+		stream.on('limit', function() {
+			numFailed += 1;
+			uploadPromise.then(function() {
+				return store.deleteFile(idPath + '/' + filename);
+			});
+		});
 
-		promises.push( store.saveStreamToFile(stream, idPath + '/' + filename.replace('..', ''), makePublic) );
+		promises.push(  );
+	
 	}).on('end', function() {
 		
 		q.all(promises).then(function() {
-			res.send(200);
+		
+			res.json({ numFailed: numFailed, fileSizeLimit: config.FILE_SIZE_LIMIT });
+
 		}).fail(function(error) {
+			
 			console.log('ERROR: saving uploaded file(s)', error);
 			res.send(500);
+		
 		}).done();
 	});
 

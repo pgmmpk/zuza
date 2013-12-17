@@ -196,11 +196,11 @@
 
 			// console.log('EXTRA:', extraParams);
 
-			zuzaFileUploadService.upload($scope.files, $scope.postUrl, extraParams).then(function() {
+			zuzaFileUploadService.upload($scope.files, $scope.postUrl, extraParams).then(function(evt) {
 				$scope.uploadInProgress = false;
 				$scope.progress = 100;
 				if ($scope.onFinished) {
-					$scope.onFinished();
+					$scope.onFinished({response: evt.target});
 				}
 			}, function(reason) {
 				$scope.error = 'Error: ' + reason;

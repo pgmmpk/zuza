@@ -2,9 +2,10 @@
 
 	var module = angular.module('zuza.controllers', ['zuza.services', 'pascalprecht.translate']);
 	
-	var SERVER_ERROR     = 'Server error';
-	var VALIDATION_ERROR = 'Invalid input';
-	var LOGIN_ERROR      = 'Invalid password or username';
+	var SERVER_ERROR      = 'Server error';
+	var VALIDATION_ERROR  = 'Invalid input';
+	var LOGIN_ERROR       = 'Invalid password or username';
+	var UPLOAD_SIZE_ERROR = 'Upload incomplete: file too big';
 
 	module.controller('DashboardCtrl', ['$scope', 'Files', 'DashboardService', function ($scope, Files, DashboardService) {
 		$scope.since = DashboardService.since();
@@ -264,9 +265,14 @@
 			$scope.data.uploadUrl = $scope.data.uploadAsPublic ? '/api/upload?public=true' : '/api/upload';
 		});
 		
-		$scope.refresh = function() {
-			$scope.current = undefined; // so that we jump to the current date
-			$scope.refreshTree();
+		$scope.refresh = function(response) {
+			var result = JSON.parse(response.responseText);
+			if (result.numFailed > 0) {
+				$scope.error = UPLOAD_SIZE_ERROR;
+			} else {
+				$scope.current = undefined; // so that we jump to the current date
+				$scope.refreshTree();
+			}
 			$scope.uploadApi.clearFiles();
 		};
 

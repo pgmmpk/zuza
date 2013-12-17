@@ -78,6 +78,7 @@
 			'Invalid input'    : 'Чевота не то ввели',
 			'Invalid password or username': 'Неправильно введен пароль или имя',
 			'Admin Role'       : 'С правами администратора',
+			'Upload incomplete: file too big': 'Загрузка не прошла: слишком длинный файл',
 			
 			'month-01'         : 'Январь',
 			'month-02'         : 'Февраль',
