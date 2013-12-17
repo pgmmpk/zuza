@@ -11,9 +11,10 @@ module.exports = function (grunt) {
 	grunt.loadNpmTasks('grunt-contrib-jasmine');
 	grunt.loadNpmTasks('grunt-mocha');
 	grunt.loadNpmTasks('grunt-ngdocs');
+	grunt.loadNpmTasks('grunt-mocha-test');
 
 	// Default task.
-	grunt.registerTask('default', ['jshint']);
+	grunt.registerTask('default', ['jshint', 'mochaTest']);
 	//grunt.registerTask('default', ['jshint', 'mocha']);
 
 	// Project configuration.
@@ -46,7 +47,16 @@ module.exports = function (grunt) {
 			test: {
 				src: ['public/test/*.html'],
 			},
-		},		
+		},	
+
+		mochaTest: {
+			test: {
+				options: {
+					reporter: 'spec'
+				},
+				src: ['test/**/*.js']
+			}
+		},
 		copy: {
 		}
 	});

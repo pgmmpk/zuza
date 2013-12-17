@@ -212,12 +212,24 @@ function saveStreamToFile(root, readStream, fileId, asPublic) {
 		var owner = dirId.slice(date.length + 1);
 		
 		createDirectory(root, date, owner).then(function() {
-			readStream.pipe( fs.createWriteStream(root + '/' + fileId, { mode: asPublic ? 0640 : 600 })).on('error', function(error) {
+			
+			readStream.on('error', function(error) {
+
 				return defer.reject(error);
 				
-			}).on('close', function() {
-				defer.resolve();
+			}).pipe( fs.createWriteStream(root + '/' + fileId, { mode: asPublic ? 0640 : 600 })).on('close', function() {
+			
+				return defer.resolve();
+				
+			}).on('error', function(error) {
+				
+				return defer.reject(error);
+			
 			});
+		
+		}).fail(function(error) {
+
+			return defer.reject(error);
 		});
 	}
 
@@ -241,9 +253,13 @@ function saveStreamToFile(root, readStream, fileId, asPublic) {
 function readFileToStream(root, fileId, writeStream) {
 	var defer = q.defer();
 	
-	fs.createReadStream(root + '/' + fileId).pipe(writeStream).on('error', function(error) {
+	var readStream = fs.createReadStream(root + '/' + fileId).on('error', function(error) {
 		return defer.reject(error);
-	}).on('end', function() {
+	});
+		
+	readStream.pipe(writeStream).on('error', function(error) {
+		return defer.reject(error);
+	}).on('close', function() {
 		return defer.resolve();
 	});
 	
