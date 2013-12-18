@@ -176,7 +176,7 @@ function listFiles(root, limit, filter, olderThan) {
 
 			return filesAt(root, date, filter).then(function(files) {
 				
-				if (files) {
+				if (files.length > 0) {
 					out.push({
 						dirId: date,
 						year : date.slice(0, 4),

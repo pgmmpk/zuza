@@ -340,7 +340,7 @@ describe('filestore', function() {
 		});
 	});
 	
-	it('.listFiles shold list files newest first', function(done) {
+	it('.listFiles should list files newest first', function(done) {
 		
 		var promises = [];
 		var p;
@@ -408,6 +408,36 @@ describe('filestore', function() {
 			
 			expect(dirs.length).to.be(0);
 
+			done();
+		});
+	});
+
+	it('.listFiles should support filtering', function(done) {
+		
+		var promises = [];
+		var p;
+		
+		p = store.saveStreamToFile(fs.createReadStream(sampleFile), '20130101/mike/blah.txt');
+		promises.push(p);
+		p = store.saveStreamToFile(fs.createReadStream(sampleFile), '20130102/liza/blah.txt');
+		promises.push(p);
+		p = store.saveStreamToFile(fs.createReadStream(sampleFile), '20130103/alice/blah.txt');
+		promises.push(p);
+		p = store.saveStreamToFile(fs.createReadStream(sampleFile), '20130104/mike/blah.txt');
+		promises.push(p);
+		
+		q.all(promises).then(function() {
+
+			return store.listFiles(200, function(f) { return f.owner === 'mike'; });
+
+		}).then(function(dirs) {
+		
+			expect(dirs.length).to.be(2);
+			expect(dirs[0].files.length).to.be(1);
+			expect(dirs[1].files.length).to.be(1);
+			expect(dirs[0].files[0].owner).to.be('mike');
+			expect(dirs[1].files[0].owner).to.be('mike');
+			
 			done();
 		});
 	});
