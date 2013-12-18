@@ -69,13 +69,17 @@ For more, see comments in the `config.js`.
 
 ## Testing
 
-To run unit tests, start server and navigate to (relatively to the application root):
+To run clinet-side unit tests, start server and navigate to (relatively to the application root):
 
 	/test
 
 If server is running on `http://localhost:3000` enter the following url:
 
 	http://localhost:3000/test
+
+To run server-side unit tests, just use `grunt`:
+
+	grunt
 
 ## License
 MIT
