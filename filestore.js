@@ -50,7 +50,13 @@ function exists(path) {
 	return defer.promise;
 }
 
+function allFilter() { 
+	return true; 
+}
+
 function filesAt(root, date, filter) {
+	
+	filter = filter || allFilter;
 	
 	return exists(root + '/' + date).then(function(exists) {
 		
@@ -107,6 +113,8 @@ function allDates(root) {
 
 function dateTree(root, filter) {
 	
+	filter = filter || allFilter;
+
 	return allDates(root).then(function(dates) {
 		var promises = [];
 		
@@ -141,6 +149,8 @@ function dateTree(root, filter) {
 
 function listFiles(root, limit, filter, olderThan) {
 	
+	filter = filter || allFilter;
+
 	return allDates(root).then(function(dates) {
 		
 		dates.sort();

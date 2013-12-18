@@ -172,6 +172,19 @@ describe('filestore', function() {
 		}
 		
 		q.all(promises).then(function() {
+			return store.filesAt('X', function() { return true; });
+		
+		}).then(function(files) {
+			
+			expect(files).to.be.an('array');
+			expect(files.length).to.be(10);
+			
+			files.forEach(function(f) {
+				expect(f.owner).to.be('mike');
+				expect(f['public']).to.be(true);
+				expect(f.size).to.be(12);
+			});
+			
 			done();
 		});
 	});
@@ -195,6 +208,88 @@ describe('filestore', function() {
 			return store.stat('X/mike/юникод.txt');
 		}).then(function(f) {
 			expect(f['public']).to.be(false);
+			
+			done();
+		});
+	});
+
+	it('.filesAt should return files at that date', function(done) {
+		var promises = [];
+		var p;
+		
+		function all() {
+			return true;
+		}
+		
+		p = store.saveStreamToFile(fs.createReadStream(sampleFile), 'A/mike/blah.txt');
+		promises.push(p);
+		p = store.saveStreamToFile(fs.createReadStream(sampleFile), 'B/liza/blah.txt');
+		promises.push(p);
+		p = store.saveStreamToFile(fs.createReadStream(sampleFile), 'C/alice/blah.txt');
+		promises.push(p);
+		p = store.saveStreamToFile(fs.createReadStream(sampleFile), 'D/mike/blah.txt');
+		promises.push(p);
+
+		q.all(promises).then(function() {
+			return store.filesAt('A', all);
+		}).then(function(files) {
+			expect(files.length).to.be(1);
+			expect(files[0].owner).to.be('mike');
+			expect(files[0].fileId).to.be('A/mike/blah.txt');
+			
+			return store.filesAt('B', all);
+		}).then(function(files) {
+			expect(files.length).to.be(1);
+			expect(files[0].owner).to.be('liza');
+			expect(files[0].fileId).to.be('B/liza/blah.txt');
+			
+			return store.filesAt('C', all);
+		}).then(function(files) {
+			expect(files.length).to.be(1);
+			expect(files[0].owner).to.be('alice');
+			expect(files[0].fileId).to.be('C/alice/blah.txt');
+			
+			return store.filesAt('D', all);
+		}).then(function(files) {
+			expect(files.length).to.be(1);
+			expect(files[0].owner).to.be('mike');
+			expect(files[0].fileId).to.be('D/mike/blah.txt');
+			
+			return store.filesAt('E', all);
+		}).then(function(files) {
+			expect(files.length).to.be(0);
+			
+			done();
+		});
+	});
+
+	it('.filesAt should allow omition of filter', function(done) {
+		store.saveStreamToFile(fs.createReadStream(sampleFile), 'A/mike/blah.txt').then(function() {
+			return store.filesAt('A');
+		}).then(function(files) {
+			expect(files.length).to.be(1);
+			done();
+		});
+	});
+
+	it('.filesAt with filter should work as expected', function(done) {
+	
+		store.saveStreamToFile(fs.createReadStream(sampleFile), 'A/mike/blah.txt').then(function() {
+			return store.filesAt('A', function(f) { return f['public'] === false; });
+		}).then(function(files) {
+			expect(files.length).to.be(1);
+
+			return store.filesAt('A', function(f) { return f['public'] === true; });
+		}).then(function(files) {
+			expect(files.length).to.be(0);
+
+			return store.filesAt('A', function(f) { return f.owner === 'mike'; });
+		}).then(function(files) {
+			expect(files.length).to.be(1);
+
+			return store.filesAt('A', function(f) { return f.owner === 'alice'; });
+		}).then(function(files) {
+			expect(files.length).to.be(0);
 			
 			done();
 		});
