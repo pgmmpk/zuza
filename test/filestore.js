@@ -217,10 +217,6 @@ describe('filestore', function() {
 		var promises = [];
 		var p;
 		
-		function all() {
-			return true;
-		}
-		
 		p = store.saveStreamToFile(fs.createReadStream(sampleFile), 'A/mike/blah.txt');
 		promises.push(p);
 		p = store.saveStreamToFile(fs.createReadStream(sampleFile), 'B/liza/blah.txt');
@@ -231,31 +227,31 @@ describe('filestore', function() {
 		promises.push(p);
 
 		q.all(promises).then(function() {
-			return store.filesAt('A', all);
+			return store.filesAt('A');
 		}).then(function(files) {
 			expect(files.length).to.be(1);
 			expect(files[0].owner).to.be('mike');
 			expect(files[0].fileId).to.be('A/mike/blah.txt');
 			
-			return store.filesAt('B', all);
+			return store.filesAt('B');
 		}).then(function(files) {
 			expect(files.length).to.be(1);
 			expect(files[0].owner).to.be('liza');
 			expect(files[0].fileId).to.be('B/liza/blah.txt');
 			
-			return store.filesAt('C', all);
+			return store.filesAt('C');
 		}).then(function(files) {
 			expect(files.length).to.be(1);
 			expect(files[0].owner).to.be('alice');
 			expect(files[0].fileId).to.be('C/alice/blah.txt');
 			
-			return store.filesAt('D', all);
+			return store.filesAt('D');
 		}).then(function(files) {
 			expect(files.length).to.be(1);
 			expect(files[0].owner).to.be('mike');
 			expect(files[0].fileId).to.be('D/mike/blah.txt');
 			
-			return store.filesAt('E', all);
+			return store.filesAt('E');
 		}).then(function(files) {
 			expect(files.length).to.be(0);
 			
@@ -291,6 +287,127 @@ describe('filestore', function() {
 		}).then(function(files) {
 			expect(files.length).to.be(0);
 			
+			done();
+		});
+	});
+	
+	it('.dateTree should work', function(done) {
+		var promises = [];
+		var p;
+		
+		p = store.saveStreamToFile(fs.createReadStream(sampleFile), '20130101/mike/blah.txt');
+		promises.push(p);
+		p = store.saveStreamToFile(fs.createReadStream(sampleFile), '20130102/liza/blah.txt');
+		promises.push(p);
+		p = store.saveStreamToFile(fs.createReadStream(sampleFile), '20130103/alice/blah.txt');
+		promises.push(p);
+		p = store.saveStreamToFile(fs.createReadStream(sampleFile), '20130104/mike/blah.txt');
+		promises.push(p);
+		
+		q.all(promises).then(function() {
+			return store.dateTree();
+		}).then(function(tree) {
+
+			expect(tree).to.be.an('array');
+			expect(tree.length).to.be(4);
+			
+			var byDate = {};
+			tree.forEach(function(dir) {
+				byDate[dir.dirId] = dir;
+			});
+			
+			expect(byDate['20130101'].files.length).to.be(1);
+			expect(byDate['20130101'].year).to.be('2013');
+			expect(byDate['20130101'].month).to.be('01');
+			expect(byDate['20130101'].day).to.be('01');
+			
+			expect(byDate['20130102'].files.length).to.be(1);
+			expect(byDate['20130102'].year).to.be('2013');
+			expect(byDate['20130102'].month).to.be('01');
+			expect(byDate['20130102'].day).to.be('02');
+
+			expect(byDate['20130103'].files.length).to.be(1);
+			expect(byDate['20130103'].year).to.be('2013');
+			expect(byDate['20130103'].month).to.be('01');
+			expect(byDate['20130103'].day).to.be('03');
+
+			expect(byDate['20130104'].files.length).to.be(1);
+			expect(byDate['20130104'].year).to.be('2013');
+			expect(byDate['20130104'].month).to.be('01');
+			expect(byDate['20130104'].day).to.be('04');
+
+			done();
+		});
+	});
+	
+	it('.listFiles shold list files newest first', function(done) {
+		
+		var promises = [];
+		var p;
+		
+		p = store.saveStreamToFile(fs.createReadStream(sampleFile), '20130101/mike/blah.txt');
+		promises.push(p);
+		p = store.saveStreamToFile(fs.createReadStream(sampleFile), '20130102/liza/blah.txt');
+		promises.push(p);
+		p = store.saveStreamToFile(fs.createReadStream(sampleFile), '20130103/alice/blah.txt');
+		promises.push(p);
+		p = store.saveStreamToFile(fs.createReadStream(sampleFile), '20130104/mike/blah.txt');
+		promises.push(p);
+		
+		function all() { return true; }
+		
+		q.all(promises).then(function() {
+
+			return store.listFiles(1, all);
+		}).then(function(dirs) {
+			
+			expect(dirs.length).to.be(1);
+			expect(dirs[0].dirId).to.be('20130104');
+			expect(dirs[0].year).to.be('2013');
+			expect(dirs[0].month).to.be('01');
+			expect(dirs[0].day).to.be('04');
+			expect(dirs[0].files.length).to.be(1);
+			expect(dirs[0].files[0].fileId).to.be('20130104/mike/blah.txt');
+
+
+			return store.listFiles(1, all, '20130104');
+		}).then(function(dirs) {
+
+			expect(dirs.length).to.be(1);
+			expect(dirs[0].dirId).to.be('20130103');
+			expect(dirs[0].year).to.be('2013');
+			expect(dirs[0].month).to.be('01');
+			expect(dirs[0].day).to.be('03');
+			expect(dirs[0].files.length).to.be(1);
+			expect(dirs[0].files[0].fileId).to.be('20130103/alice/blah.txt');
+
+			return store.listFiles(1, all, '20130103');
+		}).then(function(dirs) {
+			
+			expect(dirs.length).to.be(1);
+			expect(dirs[0].dirId).to.be('20130102');
+			expect(dirs[0].year).to.be('2013');
+			expect(dirs[0].month).to.be('01');
+			expect(dirs[0].day).to.be('02');
+			expect(dirs[0].files.length).to.be(1);
+			expect(dirs[0].files[0].fileId).to.be('20130102/liza/blah.txt');
+
+			return store.listFiles(1, all, '20130102');
+		}).then(function(dirs) {
+			
+			expect(dirs.length).to.be(1);
+			expect(dirs[0].dirId).to.be('20130101');
+			expect(dirs[0].year).to.be('2013');
+			expect(dirs[0].month).to.be('01');
+			expect(dirs[0].day).to.be('01');
+			expect(dirs[0].files.length).to.be(1);
+			expect(dirs[0].files[0].fileId).to.be('20130101/mike/blah.txt');
+
+			return store.listFiles(1, all, '20130101');
+		}).then(function(dirs) {
+			
+			expect(dirs.length).to.be(0);
+
 			done();
 		});
 	});

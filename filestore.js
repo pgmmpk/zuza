@@ -186,7 +186,7 @@ function listFiles(root, limit, filter, olderThan) {
 					});
 					
 					limit -= files.length;
-					if (limit < 0) {
+					if (limit <= 0) {
 						return out;
 					}
 				}
