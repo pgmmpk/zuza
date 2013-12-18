@@ -188,4 +188,15 @@ describe('filestore', function() {
 			done();
 		});
 	});
+
+	it('.saveStreamToFile should be able to use unicode file names', function(done) {
+		
+		store.saveStreamToFile(fs.createReadStream(sampleFile), 'X/mike/юникод.txt').then(function() {
+			return store.stat('X/mike/юникод.txt');
+		}).then(function(f) {
+			expect(f['public']).to.be(false);
+			
+			done();
+		});
+	});
 });
