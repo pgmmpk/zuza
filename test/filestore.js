@@ -2,6 +2,7 @@ var FileStore    = require('../filestore').FileStore,
 	expect       = require('expect.js'),
 	EventEmitter = require('events').EventEmitter,
 	fs           = require('fs'),
+	q            = require('q'),
 	tmp          = require('tmp');
 
 describe('filestore', function() {
@@ -150,6 +151,41 @@ describe('filestore', function() {
 				expect(exists).to.be(false);
 				done();
 			});
+		});
+	});
+
+	it('.deleteFile on a non-existent file should also work', function(done) {
+		store.deleteFile('A/mike/blah.txt').then(function() {
+			done();
+		}).fail(function(error) {
+			console.log(error);
+		});
+	});
+	
+	it('.saveStreamToFile stress should work', function(done) {
+		var promises = [];
+		
+		for (var i = 0; i < 10; i++) {
+			var p = store.saveStreamToFile(fs.createReadStream(sampleFile), 'X/mike/blah' + i, true);
+			
+			promises.push(p);
+		}
+		
+		q.all(promises).then(function() {
+			done();
+		});
+	});
+	
+	it('.saveStreamToFile should be able to ovewrite file', function(done) {
+		
+		store.saveStreamToFile(fs.createReadStream(sampleFile), 'X/mike/blah.txt', true).then(function() {
+			return store.saveStreamToFile(fs.createReadStream(sampleFile), 'X/mike/blah.txt', false);
+		}).then(function() {
+			return store.stat('X/mike/blah.txt');
+		}).then(function(f) {
+			expect(f['public']).to.be(false);
+			
+			done();
 		});
 	});
 });

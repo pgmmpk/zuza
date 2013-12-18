@@ -199,7 +199,11 @@ function makePrivate(root, fileId) {
 
 function deleteFile(root, fileId) {
 
-	return q.nfcall(fs.unlink, root + '/' + fileId);
+	return q.nfcall(fs.unlink, root + '/' + fileId).fail(function(err) {
+		if (err.code !== 'ENOENT') {
+			throw err;
+		}
+	});
 }
 
 function saveStreamToFile(root, readStream, fileId, asPublic) {
