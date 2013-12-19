@@ -14,9 +14,9 @@
 				td {{u.name}}
 				td {{u.role}}
 				td
-					a.fa.fa-edit(href="/user/{{u.username}}")
+					a.fa.fa-edit(href="/user/{{u.username}}", title="{{'Edit' | translate}}")
 				td
-					a.fa.fa-times(ng-click="remove(u)")
+					a.fa.fa-times(ng-click="remove(u)", title="{{'Delete' | translate}}")
 
 	.col-md-3		
 		a.btn.btn-default(href='/user/create') {{'Add user' | translate}}

@@ -79,6 +79,8 @@
 			'Invalid password or username': 'Неправильно введен пароль или имя',
 			'Admin Role'       : 'С правами администратора',
 			'Upload incomplete: file too big': 'Загрузка не прошла: слишком длинный файл',
+			'Edit'             : 'Изменить',
+			'Delete'           : 'Удалить',
 			
 			'month-01'         : 'Январь',
 			'month-02'         : 'Февраль',

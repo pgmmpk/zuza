@@ -33,10 +33,10 @@ html(ng-app='zuza')
 				ul.nav.navbar-nav(ng-show='user.username')
 					li(ng-class='{"active": location == ""}')
 						a(href='/') {{'title-' | translate}}
-					li(ng-class='{"active": location == "public"}')
-						a(href='/public') {{'title-public' | translate}}
 					li(ng-class='{"active": location == "files"}')
 						a(href='/files') {{'title-files' | translate}}
+					li(ng-class='{"active": location == "public"}')
+						a(href='/public') {{'title-public' | translate}}
 					li(ng-show='user.role=="admin"', ng-class='{"active": location == "user"}')
 						a(ng-href='/user') {{'Users' | translate}}
 
