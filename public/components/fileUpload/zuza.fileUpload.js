@@ -46,7 +46,7 @@
 					throw new Error('files attribute must be defined');
 				}
 
-				var fileInput = $('<input type="file" style="display:none">');
+				var fileInput = $('<input type="file" style="visibility:hidden">');
 				fileInput.attr({
 					multiple: attrs.multiple || zuzaFileInputConfig.multiple,
 					accept: attrs.accept || zuzaFileInputConfig.accept
