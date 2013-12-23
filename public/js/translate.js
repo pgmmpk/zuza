@@ -50,7 +50,7 @@
 			'Download'         : 'Скачать',
 			'Dashboard'        : 'Лента',
 			'No files'         : 'Ничего нет',
-			'Nothing new since ': 'Ничего нового нет после ',
+			'Nothing new'      : 'Ничего нового',
 			'No files. Use "Upload" button to upload files.': 'Ничего нет. Чтобы загрузить файлы, нажмите кнопку "Загрузить".',
 			'Select All/None'  : 'Отметить всё или ничего',
 

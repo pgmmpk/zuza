@@ -3,7 +3,7 @@
 		h2.text-center {{'Dashboard' | translate}}
 
 		.text-center(ng-hide='displayedFiles.length || error')
-			i {{'Nothing new since ' | translate}} {{since | langDate}}
+			i {{'Nothing new' | translate}}
 
 		.error(ng-show='error') {{error | translate}}
 
