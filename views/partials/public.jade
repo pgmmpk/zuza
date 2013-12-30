@@ -31,5 +31,5 @@
 		a.btn.btn-primary.btn-lg.fa.fa-picture-o(ng-click='toggleSlideShow()', ng-disabled='slides.length==0', title="{{'Slides' | translate}}")
 
 .slideshow(ng-if='slideShowActive')
-	mk-slides(auto-play='true', showing-time='1500', on-exit='toggleSlideShow()')
+	mk-slides(auto-play='true', showing-time='3000', on-exit='toggleSlideShow()')
 		mk-slide(ng-repeat='url in slides', url='{{url}}')				
