@@ -29,7 +29,7 @@ describe('zuza.fileUpload', function() {
 
 			expect(input.attr('type')).to.be('file');
 			expect(input.attr('multiple')).to.be('multiple');
-			expect(input.attr('style')).to.be('display:none');
+			expect(input.attr('style')).to.be('visibility:hidden');
 		});
 
 		it('should call onChange() handler when finished', function(done) {
