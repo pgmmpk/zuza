@@ -37,6 +37,7 @@
 			a.btn.btn-default.fa.fa-lock.btn-lg(ng-click='setPrivate()', ng-disabled='!selected', title="{{'Set Private' | translate}}")
 			a.btn.btn-default.fa.fa-eye.fa-lg.btn-lg(ng-click='setPublic()', ng-disabled='!selected', title="{{'Set Public' | translate}}")
 			a.btn.btn-danger.fa.fa-trash-o.fa-lg.btn-lg(ng-click='delete()', ng-disabled='!selected', title="{{'Delete' | translate}}")
+			a.btn.btn-primary.btn-lg.fa.fa-picture-o(ng-click='toggleSlideShow()', ng-disabled='slides.length==0', title="{{'Slides' | translate}}")
 
 .row.voffset2
 	.col-md-6.col-md-offset-3
@@ -48,4 +49,9 @@
 					label
 						input(type='checkbox', ng-model='data.uploadAsPublic')
 						{{'... and make public' | translate}}
+
+.slideshow(ng-if='slideShowActive')
+	mk-slides(auto-play='true', showing-time='1500', on-exit='toggleSlideShow()')
+		mk-slide(ng-repeat='url in slides', url='{{url}}')				
+
 		

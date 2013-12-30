@@ -12,6 +12,7 @@
 		
 		$scope.displayedFiles = [];
 		$scope.oldFiles = [];
+		$scope.slides = [];
 
 		$scope.loading = true;
 		$scope.error = undefined;
@@ -87,6 +88,25 @@
 				
 			}
 		};
+		
+		$scope.$watch('displayedFiles.length', function () {
+			var pictures = [];
+			$scope.displayedFiles.forEach(function(d) {
+				d.files.forEach(function(f) {
+					var extension = f.name.slice(f.name.lastIndexOf('.')).toLowerCase();
+					if ({'.jpg': true, '.jpeg': true, '.gif': true, '.png': true, 'tif': true, '.tiff': true}[extension]) {
+						pictures.push(Files.downloadUrl(f.fileId));
+					}
+				});
+			});
+			
+			$scope.slides = pictures;
+		});
+		
+		$scope.slideShowActive = false;
+		$scope.toggleSlideShow = function() {
+			$scope.slideShowActive = !$scope.slideShowActive;
+		}
 	}]);
 
 	function sortByName(order) {
@@ -249,6 +269,28 @@
 			return Files.publicFiles(current);
 		});
 		
+		$scope.slides = [];
+
+		$scope.$watch('current', function() {
+			if (!$scope.current || $scope.current.files.length === 0) {
+				$scope.slides.length = 0;
+			} else {
+				var pictures = $scope.current.files.filter(function(f) {
+					var extension = f.name.slice(f.name.lastIndexOf('.')).toLowerCase();
+					console.log('Extension:', f, extension);
+					return {'.jpg': true, '.jpeg': true, '.gif': true, '.png': true, '.tif': true, '.tiff': true}[extension];
+				});
+				
+				$scope.slides = pictures.map(function(f) {
+					return Files.downloadUrl(f.fileId);
+				});
+			}
+		});
+		
+		$scope.slideShowActive = false;
+		$scope.toggleSlideShow = function() {
+			$scope.slideShowActive = !$scope.slideShowActive;
+		}
 	}]);
 
 	module.controller('FilesCtrl', ['$scope', 'Files', '$timeout', 'UserSettings',
@@ -352,6 +394,27 @@
 			}
 		});
 
+		$scope.slides = [];
+
+		$scope.$watch('current', function() {
+			if (!$scope.current || $scope.current.files.length === 0) {
+				$scope.slides.length = 0;
+			} else {
+				var pictures = $scope.current.files.filter(function(f) {
+					var extension = f.name.slice(f.name.lastIndexOf('.')).toLowerCase();
+					return {'.jpg': true, '.jpeg': true, '.gif': true, '.png': true, '.tif': true, '.tiff': true}[extension];
+				});
+				
+				$scope.slides = pictures.map(function(f) {
+					return Files.downloadUrl(f.fileId);
+				});
+			}
+		});
+		
+		$scope.slideShowActive = false;
+		$scope.toggleSlideShow = function() {
+			$scope.slideShowActive = !$scope.slideShowActive;
+		}
 	}]);
 
 	var suffixMap = {

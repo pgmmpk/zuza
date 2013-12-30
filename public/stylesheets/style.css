@@ -89,3 +89,9 @@ td.column-thin {
 .active-color {
 	color: #2a6496!important;
 }
+
+.slideshow {
+	position:absolute;
+	left: 0;
+	top: 0;
+}

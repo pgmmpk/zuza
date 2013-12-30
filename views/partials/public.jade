@@ -27,4 +27,9 @@
 				td.column-thin
 					a.fa.fa-download.active-cursor(ng-click='download(f)', title="{{'Download' | translate}}")
 
-					
+	.col-md-3
+		a.btn.btn-primary.btn-lg.fa.fa-picture-o(ng-click='toggleSlideShow()', ng-disabled='slides.length==0', title="{{'Slides' | translate}}")
+
+.slideshow(ng-if='slideShowActive')
+	mk-slides(auto-play='true', showing-time='1500', on-exit='toggleSlideShow()')
+		mk-slide(ng-repeat='url in slides', url='{{url}}')				

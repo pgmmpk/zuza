@@ -7,7 +7,9 @@
         'zuza.controllers',
         'zuza.utils',
         'zuza.tree',
-        'zuza.translate'
+        'zuza.translate',
+        'mk.slideshow',
+        'ngAnimate'
     ]);
 
     module.config(['$routeProvider', '$locationProvider', '$httpProvider', function($routeProvider, $locationProvider, $httpProvider) {
