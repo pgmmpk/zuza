@@ -41,6 +41,7 @@
 			'Upload all'       : 'Загрузить всё',
 			'Clear all'        : 'Очистить всё',
 			'Files to be uploaded': 'Файлы для загрузки',
+			'Wait, please'     : 'Подождите пожалуйcта',
 			'My files'         : 'Мои файлы',
 			'Public files'     : 'Общие файлы',
 			'More'             : 'Далее',
