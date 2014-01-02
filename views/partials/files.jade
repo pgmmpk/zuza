@@ -51,7 +51,7 @@
 						{{'... and make public' | translate}}
 
 .slideshow(ng-if='slideShowActive')
-	mk-slides(auto-play='true', showing-time='3000', on-exit='toggleSlideShow()')
+	mk-slides(auto-play='true', showing-time='{{slideShowingTime()}}', on-exit='toggleSlideShow()')
 		mk-slide(ng-repeat='url in slides', url='{{url}}')				
 
 		

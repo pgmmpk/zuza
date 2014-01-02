@@ -13,3 +13,6 @@
 							label
 								input(type='radio', ng-model='lang', name='lang-radio', value='ru') 
 								| Русский
+			.form-group
+				label {{'Slide speed (sec)' | translate}}
+				select.form-control(ng-model='speed', ng-options='s.name for s in speeds')

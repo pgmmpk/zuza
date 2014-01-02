@@ -429,7 +429,7 @@
 		'mts' : 'movie'
 	};
 
-	module.controller('RootCtrl', ['$scope', '$location', 'Files', function($scope, $location, Files) {
+	module.controller('RootCtrl', ['$scope', '$location', 'Files', 'Store', function($scope, $location, Files, Store) {
 		
 		$scope.$watch(function() { return $location.path(); }, function() {
 			$scope.location = $location.path().slice(1); // strip forward slash
@@ -448,6 +448,9 @@
 			return suffixMap[suffix] || 'other';
 		};
 
+		$scope.slideShowingTime = function() {
+			return +Store.get('zuza-slide-time', 5000);
+		};
 	}]);
 
 	module.controller('SettingsCtrl', ['$scope', '$translate', 'Store', 'UserSettings', 
@@ -462,6 +465,38 @@
 		$scope.autoPublic = UserSettings.autoPublic.get();
 		$scope.$watch('autoPublic', function() {
 			UserSettings.autoPublic.set($scope.autoPublic);
+		});
+		
+		$scope.speeds = [
+			{ name: '2.0', value: 2000 },
+			{ name: '2.5', value: 2500 },
+			{ name: '3.0', value: 3000 },
+			{ name: '3.5', value: 3500 },
+			{ name: '4.0', value: 4000 },
+			{ name: '4.5', value: 4500 },
+			{ name: '5.0', value: 5000 },
+			{ name: '6.0', value: 6000 },
+			{ name: '7.0', value: 7000 },
+			{ name: '8.0', value: 8000 },
+			{ name: '9.0', value: 9000 },
+			{ name: '10.0', value: 10000 }
+		];
+		
+		$scope.speed = $scope.speeds[6];
+		var dist = 1000000;
+		var value = +Store.get('zuza-slide-time', 5000);
+		$scope.speeds.forEach(function(s) {
+			var d = Math.abs(value - s.value);
+			if (d < dist) {
+				$scope.speed = s;
+				dist = d;
+			}
+		});
+		
+		$scope.$watch('speed', function(val) {
+			if (val) {
+				Store.set('zuza-slide-time', val.value);
+			}
 		});
 	}]);
 	
