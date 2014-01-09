@@ -136,14 +136,10 @@ function dateTree(root, filter) {
 		});
 
 	}).then(function(results) {
-		var out = [];
 		
-		results.forEach(function(dir) {
-			out.push(dir);
+		return results.filter(function(dir) {
+			return dir.files.length > 0;
 		});
-		
-		return out;
-
 	});
 }
 

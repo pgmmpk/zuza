@@ -340,6 +340,52 @@ describe('filestore', function() {
 		});
 	});
 	
+	it('.dateTree should not show empty directories', function(done) {
+		var promises = [];
+		var p;
+		
+		p = store.saveStreamToFile(fs.createReadStream(sampleFile), '20130101/mike/blah.txt');
+		promises.push(p);
+		p = store.saveStreamToFile(fs.createReadStream(sampleFile), '20130102/liza/blah.txt');
+		promises.push(p);
+		p = store.saveStreamToFile(fs.createReadStream(sampleFile), '20130103/alice/blah.txt');
+		promises.push(p);
+		p = store.saveStreamToFile(fs.createReadStream(sampleFile), '20130104/mike/blah.txt');
+		promises.push(p);
+		
+		q.all(promises).then(function() {
+			return store.deleteFile('20130102/liza/blah.txt');
+		}).then(function() {
+			return store.dateTree();
+		}).then(function(tree) {
+
+			expect(tree).to.be.an('array');
+			expect(tree.length).to.be(3);
+			
+			var byDate = {};
+			tree.forEach(function(dir) {
+				byDate[dir.dirId] = dir;
+			});
+			
+			expect(byDate['20130101'].files.length).to.be(1);
+			expect(byDate['20130101'].year).to.be('2013');
+			expect(byDate['20130101'].month).to.be('01');
+			expect(byDate['20130101'].day).to.be('01');
+			
+			expect(byDate['20130103'].files.length).to.be(1);
+			expect(byDate['20130103'].year).to.be('2013');
+			expect(byDate['20130103'].month).to.be('01');
+			expect(byDate['20130103'].day).to.be('03');
+
+			expect(byDate['20130104'].files.length).to.be(1);
+			expect(byDate['20130104'].year).to.be('2013');
+			expect(byDate['20130104'].month).to.be('01');
+			expect(byDate['20130104'].day).to.be('04');
+
+			done();
+		});
+	});
+
 	it('.listFiles should list files newest first', function(done) {
 		
 		var promises = [];
