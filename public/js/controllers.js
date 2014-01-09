@@ -6,6 +6,15 @@
 	var VALIDATION_ERROR  = 'Invalid input';
 	var LOGIN_ERROR       = 'Invalid password or username';
 	var UPLOAD_SIZE_ERROR = 'Upload incomplete: file too big';
+	
+	function isImageFile(name) {
+		var index = name.lastIndexOf('.');
+		if (index < 0) {
+			return false;
+		}
+		var extension = name.slice(index).toLowerCase();
+		return {'.jpg': true, '.jpeg': true, '.gif': true, '.png': true, '.tif': true, '.tiff': true}[extension] || false;
+	}
 
 	module.controller('DashboardCtrl', ['$scope', 'Files', 'DashboardService', function ($scope, Files, DashboardService) {
 		$scope.since = DashboardService.since();
@@ -88,25 +97,19 @@
 				
 			}
 		};
-		
+
 		$scope.$watch('displayedFiles.length', function () {
-			var pictures = [];
-			$scope.displayedFiles.forEach(function(d) {
-				d.files.forEach(function(f) {
-					var extension = f.name.slice(f.name.lastIndexOf('.')).toLowerCase();
-					if ({'.jpg': true, '.jpeg': true, '.gif': true, '.png': true, 'tif': true, '.tiff': true}[extension]) {
-						pictures.push(Files.downloadUrl(f.fileId));
-					}
+			$scope.slideApi.urls.length = 0;
+			if ($scope.displayedFiles) {
+				$scope.displayedFiles.forEach(function(d) {
+					d.files.filter(function(f) { 
+						return isImageFile(f.name);
+					}).forEach(function(f) {
+						$scope.slideApi.urls.push( Files.downloadUrl(f.fileId) );
+					});
 				});
-			});
-			
-			$scope.slides = pictures;
+			}
 		});
-		
-		$scope.slideShowActive = false;
-		$scope.toggleSlideShow = function() {
-			$scope.slideShowActive = !$scope.slideShowActive;
-		}
 	}]);
 
 	function sortByName(order) {
@@ -269,28 +272,19 @@
 			return Files.publicFiles(current);
 		});
 		
-		$scope.slides = [];
+		$scope.slideApi.urls.length = 0;
 
-		$scope.$watch('current', function() {
-			if (!$scope.current || $scope.current.files.length === 0) {
-				$scope.slides.length = 0;
-			} else {
-				var pictures = $scope.current.files.filter(function(f) {
-					var extension = f.name.slice(f.name.lastIndexOf('.')).toLowerCase();
-					console.log('Extension:', f, extension);
-					return {'.jpg': true, '.jpeg': true, '.gif': true, '.png': true, '.tif': true, '.tiff': true}[extension];
-				});
-				
-				$scope.slides = pictures.map(function(f) {
+		$scope.$watch('current.files.length', function() {
+			if ($scope.current && $scope.current.files) {
+				$scope.slideApi.urls = $scope.current.files.filter(function(f) {
+					return isImageFile(f.name);
+				}).map(function(f) {
 					return Files.downloadUrl(f.fileId);
 				});
+			} else {
+				$scope.slideApi.length = 0;
 			}
 		});
-		
-		$scope.slideShowActive = false;
-		$scope.toggleSlideShow = function() {
-			$scope.slideShowActive = !$scope.slideShowActive;
-		}
 	}]);
 
 	module.controller('FilesCtrl', ['$scope', 'Files', '$timeout', 'UserSettings',
@@ -394,40 +388,20 @@
 			}
 		});
 
-		$scope.slides = [];
+		$scope.slideApi.urls.length = 0;
 
-		$scope.$watch('current', function() {
-			if (!$scope.current || $scope.current.files.length === 0) {
-				$scope.slides.length = 0;
-			} else {
-				var pictures = $scope.current.files.filter(function(f) {
-					var extension = f.name.slice(f.name.lastIndexOf('.')).toLowerCase();
-					return {'.jpg': true, '.jpeg': true, '.gif': true, '.png': true, '.tif': true, '.tiff': true}[extension];
-				});
-				
-				$scope.slides = pictures.map(function(f) {
+		$scope.$watch('current.files.length', function() {
+			if ($scope.current && $scope.current.files) {
+				$scope.slideApi.urls = $scope.current.files.filter(function(f) {
+					return isImageFile(f.name);
+				}).map(function(f) {
 					return Files.downloadUrl(f.fileId);
 				});
+			} else {
+				$scope.slideApi.urls.length = 0;
 			}
 		});
-		
-		$scope.slideShowActive = false;
-		$scope.toggleSlideShow = function() {
-			$scope.slideShowActive = !$scope.slideShowActive;
-		}
 	}]);
-
-	var suffixMap = {
-		'jpg' : 'picture',
-		'jpeg': 'picture',
-		'png' : 'picture',
-		'gif' : 'picture',
-		'tif' : 'picture',
-		'tiff': 'picture',
-		'mov' : 'movie',
-		'mpeg': 'movie',
-		'mts' : 'movie'
-	};
 
 	module.controller('RootCtrl', ['$scope', '$location', 'Files', 'Store', function($scope, $location, Files, Store) {
 		
@@ -439,17 +413,35 @@
 			Files.download(file.fileId);
 		};
 
-		$scope.inferFileType = function(filename) {
-			var index = filename.lastIndexOf('.');
-			var suffix = (index < 0) ? '' : filename.slice(index);
-
-			suffix = suffix.toLowerCase();
-
-			return suffixMap[suffix] || 'other';
+		$scope.slideApi = {
+			showingTime : function() {
+				return +Store.get('zuza-slide-time', 5000);
+			},
+			run              : function() {
+				$scope.slideApi.autoPlay = true;
+				$scope.slideApi.startIndex = 0;
+				$scope.slideApi.showing = true;
+			},
+			showing          : false,
+			autoPlay         : false,
+			startIndex       : 0,
+			urls             : []
 		};
-
-		$scope.slideShowingTime = function() {
-			return +Store.get('zuza-slide-time', 5000);
+		
+		$scope.show = function(file) {
+			var url = Files.downloadUrl(file.fileId);
+			var i;
+			for (i = 0; i < $scope.slideApi.urls.length; i++) {
+				if (url === $scope.slideApi.urls[i]) {
+					$scope.slideApi.autoPlay = false;
+					$scope.slideApi.startIndex = i;
+					$scope.slideApi.showing = true;
+					return;
+				}
+			}
+			
+			// if not image, just download the file
+			$scope.download(file);
 		};
 	}]);
 

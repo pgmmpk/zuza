@@ -23,7 +23,7 @@
 				td
 					span.zuza-icon.fa.fa-lock(ng-hide='f.public', title="{{'Private' | translate}}")
 					span.zuza-icon.fa.fa-eye(ng-show='f.public', title="{{'Public' | translate}}")
-				td.active-cursor(ng-click='download(f)', title="{{'Download' | translate}}") {{f.name}}
+				td.active-cursor(ng-click='show(f)', title="{{'Show' | translate}}") {{f.name}}
 				td.column-narrow {{f.size | zuzaBytes}}
 				td.column-thin
 					a.fa.fa-download.active(ng-click='download(f)', title="{{'Download' | translate}}")
@@ -37,7 +37,7 @@
 			a.btn.btn-default.fa.fa-lock.btn-lg(ng-click='setPrivate()', ng-disabled='!selected', title="{{'Set Private' | translate}}")
 			a.btn.btn-default.fa.fa-eye.fa-lg.btn-lg(ng-click='setPublic()', ng-disabled='!selected', title="{{'Set Public' | translate}}")
 			a.btn.btn-danger.fa.fa-trash-o.fa-lg.btn-lg(ng-click='delete()', ng-disabled='!selected', title="{{'Delete' | translate}}")
-			a.btn.btn-primary.btn-lg.fa.fa-picture-o(ng-click='toggleSlideShow()', ng-disabled='slides.length==0', title="{{'Slides' | translate}}")
+			a.btn.btn-primary.btn-lg.fa.fa-picture-o(ng-click='slideApi.run()', ng-disabled='slideApi.urls.length==0', title="{{'Slides' | translate}}")
 
 .row.voffset2
 	.col-md-6.col-md-offset-3

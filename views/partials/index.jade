@@ -15,7 +15,7 @@
 
 			table.table.table-nolines.table-condensed
 				tr(ng-repeat='f in datum.files')
-					td.active-cursor(ng-click='download(f)', title="{{'Download' | translate}}") {{f.name}}
+					td.active-cursor(ng-click='show(f)', title="{{'Show' | translate}}") {{f.name}}
 					td.column-narrow {{f.size | zuzaBytes}}
 					td.column-narrow {{f.owner}}
 					td.column-thin
@@ -30,8 +30,4 @@
 			.date-hdr
 				div {{'No more' | translate}}
 	.col-md-3
-		a.btn.btn-primary.btn-lg.fa.fa-picture-o(ng-click='toggleSlideShow()', ng-disabled='slides.length==0', title="{{'Slides' | translate}}")
-
-.slideshow(ng-if='slideShowActive')
-	mk-slides(auto-play='true', showing-time='{{slideShowingTime()}}', on-exit='toggleSlideShow()')
-		mk-slide(ng-repeat='url in slides', url='{{url}}')			
+		a.btn.btn-primary.btn-lg.fa.fa-picture-o(ng-click='slideApi.run()', ng-disabled='slideApi.urls.length==0', title="{{'Slides' | translate}}")

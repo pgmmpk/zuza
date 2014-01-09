@@ -49,6 +49,7 @@
 			'Set Public'       : 'Открыть для всех',
 			'Delete'           : 'Стереть',
 			'Download'         : 'Скачать',
+			'Show'             : 'Показать',
 			'Dashboard'        : 'Лента',
 			'No files'         : 'Ничего нет',
 			'Nothing new'      : 'Ничего нового',
