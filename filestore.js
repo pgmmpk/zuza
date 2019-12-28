@@ -96,7 +96,7 @@ function filesAt(root, date, filter) {
 			});
 		});
 		
-		return allfiles;
+		return allfiles.sort((a, b) => a.mtime - b.mtime);
 	});
 }
 
