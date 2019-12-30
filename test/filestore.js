@@ -1,490 +1,376 @@
+const test = require('ava');
 var FileStore    = require('../filestore').FileStore,
 	expect       = require('expect.js'),
 	EventEmitter = require('events').EventEmitter,
 	fs           = require('fs'),
 	q            = require('q'),
-	tmp          = require('tmp');
+	tmp          = require('tmp-promise');
+import { withFile, withDir } from 'tmp-promise';
 
-describe('filestore', function() {
-	
-	var sampleFile = null;
-	var sampleFile2 = null;
-	var tempDir = null;
-	var store = null;
-	
-	beforeEach(function(done) {
-		tmp.file(function(err, filename) {
-			fs.writeFile(filename, 'Hello, world', function() {
-				sampleFile = filename;
-				done();
-			});
+async function setup(cb) {
+	await withFile( async ({path: sampleFile}) => {
+		await fs.promises.writeFile(sampleFile, 'Hello, world');
+		await withFile(async ({ path: sampleFile2 }) => {
+			await withDir(async ({path: tempDir}) => {
+				const store = FileStore(tempDir);
+				await cb({
+					sampleFile, sampleFile2, tempDir, store
+				});
+			}, { unsafeCleanup: true });
 		});
 	});
+}
 
-	beforeEach(function(done) {
-		tmp.file(function(err, filename) {
-			sampleFile2 = filename;
-			done();
-		});
+test('filestore.saveStreamToFile should create file', async t => {
+	await setup(async ({sampleFile, store}) => {
+		const stream = fs.createReadStream(sampleFile);
+		await store.saveStreamToFile(stream, 'A/mike/blah.txt');
+		const f = await store.stat('A/mike/blah.txt')
+
+		t.is(f.fileId, 'A/mike/blah.txt');
+		t.is(f.size, 12);
+		t.is(f.public, false);
 	});
+});
 
-	beforeEach(function(done) {
-		
-		tmp.dir({unsafeCleanup: true}, function(err, dirname) {
-			tempDir = dirname;
-			store = FileStore(tempDir);
-			done();
-		});
+test('filestore.saveStreamToFile with public option should create public file', async t => {
+	await setup(async ({ sampleFile, store }) => {
+		const stream = fs.createReadStream(sampleFile);
+
+		await store.saveStreamToFile(stream, 'A/mike/blah2.txt', true);
+		const f = await store.stat('A/mike/blah2.txt');
+
+		t.is(f.fileId, 'A/mike/blah2.txt');
+		t.is(f.size, 12);
+		t.is(f.public, true);
 	});
+});
 
-	it('.saveStreamToFile should create file', function(done) {
+test('filestore.saveStreamToFile with garbled file id should fail', async t => {
+	await setup(async ({sampleFile, store}) => {
+		const stream = fs.createReadStream(sampleFile);
 
-		var stream = fs.createReadStream(sampleFile);
-		
-		store.saveStreamToFile(stream, 'A/mike/blah.txt').then(function() {
-			
-			return store.stat('A/mike/blah.txt');
-		
-		}).then(function(f) {
-			
-			expect(f.fileId).to.be('A/mike/blah.txt');
-			expect(f.size).to.be(12);
-			expect(f['public']).to.be(false);
-			
-			done();
-
-		}).fail(function(error) {
-			throw error;
-		});
-	});
-		
-	it('.saveStreamToFile with public option should create public file', function(done) {
-
-		var stream = fs.createReadStream(sampleFile);
-		
-		store.saveStreamToFile(stream, 'A/mike/blah.txt', true).then(function() {
-		
-			return store.stat('A/mike/blah.txt');
-
-		}).then(function(f) {
-		
-			expect(f.fileId).to.be('A/mike/blah.txt');
-			expect(f.size).to.be(12);
-			expect(f['public']).to.be(true);
-			
-			done();
-
-		}).fail(function(error) {
-			throw error;
-		});
-	});
-
-	it('.saveStreamToFile with garbled file id should fail', function(done) {
-
-		var stream = fs.createReadStream(sampleFile);
-		
-		store.saveStreamToFile(stream, 'A/B/mike/blah.txt', true).fail(function(error) {
-			expect(error.code).to.be('ENOENT');
-			
-			done();
-		});
-	});
-
-	it('.readFileToStream should read file', function(done) {
-		
-		fs.mkdirSync(tempDir + '/A');
-		fs.mkdirSync(tempDir + '/A/mike');
-		fs.writeFileSync(tempDir + '/A/mike/foo.txt', 'Hey!');
-		
-		store.readFileToStream('A/mike/foo.txt', fs.createWriteStream(sampleFile2)).then(function() {
-			fs.stat(sampleFile2, function(err, stat) {
-				if (err) throw err;
-				
-				expect(stat.size).to.be(4);
-				done();
-			});
-		}).fail(function(err) {
-			console.log(err);
-		});
-	});
-
-	it('.readFileToStream on unknown file should fail', function(done) {
-		
-		store.readFileToStream('A/mike/foo.txt', fs.createWriteStream(sampleFile2)).fail(function(err) {
-			
-			expect(err.code).to.be('ENOENT');
-			done();
-		});
-	});
-	
-	it('.makePublic and .makePrivate should work', function(done) {
-
-		store.saveStreamToFile(fs.createReadStream(sampleFile), 'A/mike/blah.txt', false).then(function() {
-			return store.stat('A/mike/blah.txt');
-		}).then(function(f) {
-			expect(f['public']).to.be(false);
-			
-			return store.makePublic('A/mike/blah.txt');
-		}).then(function() {
-			return store.stat('A/mike/blah.txt');
-		}).then(function(f) {
-			expect(f['public']).to.be(true);
-			return store.makePrivate('A/mike/blah.txt');
-		}).then(function() {
-			return store.stat('A/mike/blah.txt');
-		}).then(function(f) {
-			expect(f['public']).to.be(false);
-			done();
-		});
-		
-	});
-	
-	it('.deleteFile should work', function(done) {
-
-		store.saveStreamToFile(fs.createReadStream(sampleFile), 'A/mike/blah.txt', false).then(function() {
-			return store.stat('A/mike/blah.txt');
-		}).then(function(f) {
-			return store.deleteFile('A/mike/blah.txt');
-		}).then(function() {
-			
-			fs.exists(tempDir + '/A/mike/blah.txt', function(exists) {
-				expect(exists).to.be(false);
-				done();
-			});
-		});
-	});
-
-	it('.deleteFile on a non-existent file should also work', function(done) {
-		store.deleteFile('A/mike/blah.txt').then(function() {
-			done();
-		}).fail(function(error) {
-			console.log(error);
-		});
-	});
-	
-	it('.saveStreamToFile stress should work', function(done) {
-		var promises = [];
-		
-		for (var i = 0; i < 10; i++) {
-			var p = store.saveStreamToFile(fs.createReadStream(sampleFile), 'X/mike/blah' + i, true);
-			
-			promises.push(p);
+		try {
+			await store.saveStreamToFile(stream, 'A/B/mike/blah.txt', true);
+		} catch(err) {
+			t.is(err.code, 'ENOENT');
 		}
-		
-		q.all(promises).then(function() {
-			return store.filesAt('X', function() { return true; });
-		
-		}).then(function(files) {
-			
-			expect(files).to.be.an('array');
-			expect(files.length).to.be(10);
-			
-			files.forEach(function(f) {
-				expect(f.owner).to.be('mike');
-				expect(f['public']).to.be(true);
-				expect(f.size).to.be(12);
-			});
-			
-			done();
-		});
 	});
-	
-	it('.saveStreamToFile should be able to ovewrite file', function(done) {
-		
-		store.saveStreamToFile(fs.createReadStream(sampleFile), 'X/mike/blah.txt', true).then(function() {
-			return store.saveStreamToFile(fs.createReadStream(sampleFile), 'X/mike/blah.txt', false);
-		}).then(function() {
-			return store.stat('X/mike/blah.txt');
-		}).then(function(f) {
-			expect(f['public']).to.be(false);
-			
-			done();
-		});
+});
+
+test('filestore.readFileToStream should read file', async t => {
+	await setup(async ({ sampleFile2, store, tempDir }) => {
+		await fs.promises.mkdir(tempDir + '/A');
+		await fs.promises.mkdir(tempDir + '/A/mike');
+		await fs.promises.writeFile(tempDir + '/A/mike/foo.txt', 'Hey!');
+
+		await store.readFileToStream('A/mike/foo.txt', fs.createWriteStream(sampleFile2));
+		const stat = await fs.promises.stat(sampleFile2);
+		t.is(stat.size, 4)
 	});
+});
 
-	it('.saveStreamToFile should be able to use unicode file names', function(done) {
-		
-		store.saveStreamToFile(fs.createReadStream(sampleFile), 'X/mike/юникод.txt').then(function() {
-			return store.stat('X/mike/юникод.txt');
-		}).then(function(f) {
-			expect(f['public']).to.be(false);
-			
-			done();
-		});
+test('filestore.readFileToStream on unknown file should fail', async t => {
+	await setup(async ({ sampleFile2, store }) => {
+		try {
+			await store.readFileToStream('A/mike/foo.txt', fs.createWriteStream(sampleFile2));
+		} catch(err) {
+			t.is(err.code, 'ENOENT');
+		}
 	});
+});
 
-	it('.filesAt should return files at that date', function(done) {
-		var promises = [];
-		var p;
-		
-		p = store.saveStreamToFile(fs.createReadStream(sampleFile), 'A/mike/blah.txt');
-		promises.push(p);
-		p = store.saveStreamToFile(fs.createReadStream(sampleFile), 'B/liza/blah.txt');
-		promises.push(p);
-		p = store.saveStreamToFile(fs.createReadStream(sampleFile), 'C/alice/blah.txt');
-		promises.push(p);
-		p = store.saveStreamToFile(fs.createReadStream(sampleFile), 'D/mike/blah.txt');
-		promises.push(p);
+test('filestore.makePublic and filestore.makePrivate should work', async t => {
+	await setup(async ({ sampleFile, store }) => {
+		await store.saveStreamToFile(fs.createReadStream(sampleFile), 'A/mike/blah.txt', false);
+		const s = await store.stat('A/mike/blah.txt');
+		t.is(s.public, false);
 
-		q.all(promises).then(function() {
-			return store.filesAt('A');
-		}).then(function(files) {
-			expect(files.length).to.be(1);
-			expect(files[0].owner).to.be('mike');
-			expect(files[0].fileId).to.be('A/mike/blah.txt');
-			
-			return store.filesAt('B');
-		}).then(function(files) {
-			expect(files.length).to.be(1);
-			expect(files[0].owner).to.be('liza');
-			expect(files[0].fileId).to.be('B/liza/blah.txt');
-			
-			return store.filesAt('C');
-		}).then(function(files) {
-			expect(files.length).to.be(1);
-			expect(files[0].owner).to.be('alice');
-			expect(files[0].fileId).to.be('C/alice/blah.txt');
-			
-			return store.filesAt('D');
-		}).then(function(files) {
-			expect(files.length).to.be(1);
-			expect(files[0].owner).to.be('mike');
-			expect(files[0].fileId).to.be('D/mike/blah.txt');
-			
-			return store.filesAt('E');
-		}).then(function(files) {
-			expect(files.length).to.be(0);
-			
-			done();
-		});
+		await store.makePublic('A/mike/blah.txt');
+		const s2 = await store.stat('A/mike/blah.txt');
+		t.is(s2.public, true);
+
+		await store.makePrivate('A/mike/blah.txt');
+		const s3 = await store.stat('A/mike/blah.txt');
+		t.is(s3.public, false);
 	});
+});
 
-	it('.filesAt should allow omition of filter', function(done) {
-		store.saveStreamToFile(fs.createReadStream(sampleFile), 'A/mike/blah.txt').then(function() {
-			return store.filesAt('A');
-		}).then(function(files) {
-			expect(files.length).to.be(1);
-			done();
-		});
+test('filestore.deleteFile should work', async t => {
+	await setup(async ({ sampleFile, store }) => {
+		await store.saveStreamToFile(fs.createReadStream(sampleFile), 'A/mike/blah.txt', false);
+		await store.stat('A/mike/blah.txt');
+		await store.deleteFile('A/mike/blah.txt');
+
+		try {
+			await store.stat('A/mike/blah.txt');
+		} catch(err) {
+			t.is(err.code, 'ENOENT');
+		}
 	});
+});
 
-	it('.filesAt with filter should work as expected', function(done) {
-	
-		store.saveStreamToFile(fs.createReadStream(sampleFile), 'A/mike/blah.txt').then(function() {
-			return store.filesAt('A', function(f) { return f['public'] === false; });
-		}).then(function(files) {
-			expect(files.length).to.be(1);
-
-			return store.filesAt('A', function(f) { return f['public'] === true; });
-		}).then(function(files) {
-			expect(files.length).to.be(0);
-
-			return store.filesAt('A', function(f) { return f.owner === 'mike'; });
-		}).then(function(files) {
-			expect(files.length).to.be(1);
-
-			return store.filesAt('A', function(f) { return f.owner === 'alice'; });
-		}).then(function(files) {
-			expect(files.length).to.be(0);
-			
-			done();
-		});
+test('filestore.deleteFile on a non-existent file should also work', async t => {
+	await setup(async ({ store }) => {
+		await store.deleteFile('A/mike/blah.txt');
+		t.pass();
 	});
-	
-	it('.dateTree should work', function(done) {
-		var promises = [];
-		var p;
-		
-		p = store.saveStreamToFile(fs.createReadStream(sampleFile), '20130101/mike/blah.txt');
-		promises.push(p);
-		p = store.saveStreamToFile(fs.createReadStream(sampleFile), '20130102/liza/blah.txt');
-		promises.push(p);
-		p = store.saveStreamToFile(fs.createReadStream(sampleFile), '20130103/alice/blah.txt');
-		promises.push(p);
-		p = store.saveStreamToFile(fs.createReadStream(sampleFile), '20130104/mike/blah.txt');
-		promises.push(p);
-		
-		q.all(promises).then(function() {
-			return store.dateTree();
-		}).then(function(tree) {
+});
 
-			expect(tree).to.be.an('array');
-			expect(tree.length).to.be(4);
-			
-			var byDate = {};
-			tree.forEach(function(dir) {
-				byDate[dir.dirId] = dir;
-			});
-			
-			expect(byDate['20130101'].files.length).to.be(1);
-			expect(byDate['20130101'].year).to.be('2013');
-			expect(byDate['20130101'].month).to.be('01');
-			expect(byDate['20130101'].day).to.be('01');
-			
-			expect(byDate['20130102'].files.length).to.be(1);
-			expect(byDate['20130102'].year).to.be('2013');
-			expect(byDate['20130102'].month).to.be('01');
-			expect(byDate['20130102'].day).to.be('02');
+test('filestore.saveStreamToFile stress should work', async t => {
+	await setup(async ({ sampleFile, store }) => {
+		const jobs = [];
+		for (let i = 0; i < 10; i++) {
+			const job = store.saveStreamToFile(fs.createReadStream(sampleFile), 'X/mike/blah' + i, true);
+ 			jobs.push(job);
+		}
+		for (const job of jobs) {
+			await job;
+		}
 
-			expect(byDate['20130103'].files.length).to.be(1);
-			expect(byDate['20130103'].year).to.be('2013');
-			expect(byDate['20130103'].month).to.be('01');
-			expect(byDate['20130103'].day).to.be('03');
+		const files = await store.filesAt('X', () => true);
+		t.is(files.length, 10);
 
-			expect(byDate['20130104'].files.length).to.be(1);
-			expect(byDate['20130104'].year).to.be('2013');
-			expect(byDate['20130104'].month).to.be('01');
-			expect(byDate['20130104'].day).to.be('04');
-
-			done();
-		});
+		for (const f of files) {
+			t.is(f.owner, 'mike');
+			t.is(f.public, true);
+			t.is(f.size, 12)
+		}
 	});
-	
-	it('.dateTree should not show empty directories', function(done) {
-		var promises = [];
-		var p;
-		
-		p = store.saveStreamToFile(fs.createReadStream(sampleFile), '20130101/mike/blah.txt');
-		promises.push(p);
-		p = store.saveStreamToFile(fs.createReadStream(sampleFile), '20130102/liza/blah.txt');
-		promises.push(p);
-		p = store.saveStreamToFile(fs.createReadStream(sampleFile), '20130103/alice/blah.txt');
-		promises.push(p);
-		p = store.saveStreamToFile(fs.createReadStream(sampleFile), '20130104/mike/blah.txt');
-		promises.push(p);
-		
-		q.all(promises).then(function() {
-			return store.deleteFile('20130102/liza/blah.txt');
-		}).then(function() {
-			return store.dateTree();
-		}).then(function(tree) {
+});
 
-			expect(tree).to.be.an('array');
-			expect(tree.length).to.be(3);
-			
-			var byDate = {};
-			tree.forEach(function(dir) {
-				byDate[dir.dirId] = dir;
-			});
-			
-			expect(byDate['20130101'].files.length).to.be(1);
-			expect(byDate['20130101'].year).to.be('2013');
-			expect(byDate['20130101'].month).to.be('01');
-			expect(byDate['20130101'].day).to.be('01');
-			
-			expect(byDate['20130103'].files.length).to.be(1);
-			expect(byDate['20130103'].year).to.be('2013');
-			expect(byDate['20130103'].month).to.be('01');
-			expect(byDate['20130103'].day).to.be('03');
+test('filestore.saveStreamToFile should be able to ovewrite file', async t => {
+	await setup(async ({ sampleFile, store }) => {
+		await store.saveStreamToFile(fs.createReadStream(sampleFile), 'X/mike/blah.txt', true);
+		await store.saveStreamToFile(fs.createReadStream(sampleFile), 'X/mike/blah.txt', false);
+		const s = await store.stat('X/mike/blah.txt');
 
-			expect(byDate['20130104'].files.length).to.be(1);
-			expect(byDate['20130104'].year).to.be('2013');
-			expect(byDate['20130104'].month).to.be('01');
-			expect(byDate['20130104'].day).to.be('04');
-
-			done();
-		});
+		t.is(s.public, false);
 	});
+});
 
-	it('.listFiles should list files newest first', function(done) {
-		
-		var promises = [];
-		var p;
-		
-		p = store.saveStreamToFile(fs.createReadStream(sampleFile), '20130101/mike/blah.txt');
-		promises.push(p);
-		p = store.saveStreamToFile(fs.createReadStream(sampleFile), '20130102/liza/blah.txt');
-		promises.push(p);
-		p = store.saveStreamToFile(fs.createReadStream(sampleFile), '20130103/alice/blah.txt');
-		promises.push(p);
-		p = store.saveStreamToFile(fs.createReadStream(sampleFile), '20130104/mike/blah.txt');
-		promises.push(p);
-		
-		function all() { return true; }
-		
-		q.all(promises).then(function() {
+test('filestore.saveStreamToFile should be able to use unicode file names', async t => {
+	await setup(async ({ sampleFile, store }) => {
+		await store.saveStreamToFile(fs.createReadStream(sampleFile), 'X/mike/юникод.txt');
+		const s = await store.stat('X/mike/юникод.txt');
 
-			return store.listFiles(1, all);
-		}).then(function(dirs) {
-			
-			expect(dirs.length).to.be(1);
-			expect(dirs[0].dirId).to.be('20130104');
-			expect(dirs[0].year).to.be('2013');
-			expect(dirs[0].month).to.be('01');
-			expect(dirs[0].day).to.be('04');
-			expect(dirs[0].files.length).to.be(1);
-			expect(dirs[0].files[0].fileId).to.be('20130104/mike/blah.txt');
-
-
-			return store.listFiles(1, all, '20130104');
-		}).then(function(dirs) {
-
-			expect(dirs.length).to.be(1);
-			expect(dirs[0].dirId).to.be('20130103');
-			expect(dirs[0].year).to.be('2013');
-			expect(dirs[0].month).to.be('01');
-			expect(dirs[0].day).to.be('03');
-			expect(dirs[0].files.length).to.be(1);
-			expect(dirs[0].files[0].fileId).to.be('20130103/alice/blah.txt');
-
-			return store.listFiles(1, all, '20130103');
-		}).then(function(dirs) {
-			
-			expect(dirs.length).to.be(1);
-			expect(dirs[0].dirId).to.be('20130102');
-			expect(dirs[0].year).to.be('2013');
-			expect(dirs[0].month).to.be('01');
-			expect(dirs[0].day).to.be('02');
-			expect(dirs[0].files.length).to.be(1);
-			expect(dirs[0].files[0].fileId).to.be('20130102/liza/blah.txt');
-
-			return store.listFiles(1, all, '20130102');
-		}).then(function(dirs) {
-			
-			expect(dirs.length).to.be(1);
-			expect(dirs[0].dirId).to.be('20130101');
-			expect(dirs[0].year).to.be('2013');
-			expect(dirs[0].month).to.be('01');
-			expect(dirs[0].day).to.be('01');
-			expect(dirs[0].files.length).to.be(1);
-			expect(dirs[0].files[0].fileId).to.be('20130101/mike/blah.txt');
-
-			return store.listFiles(1, all, '20130101');
-		}).then(function(dirs) {
-			
-			expect(dirs.length).to.be(0);
-
-			done();
-		});
+		t.is(s.public, false);
 	});
+});
 
-	it('.listFiles should support filtering', function(done) {
-		
-		var promises = [];
-		var p;
-		
-		p = store.saveStreamToFile(fs.createReadStream(sampleFile), '20130101/mike/blah.txt');
-		promises.push(p);
-		p = store.saveStreamToFile(fs.createReadStream(sampleFile), '20130102/liza/blah.txt');
-		promises.push(p);
-		p = store.saveStreamToFile(fs.createReadStream(sampleFile), '20130103/alice/blah.txt');
-		promises.push(p);
-		p = store.saveStreamToFile(fs.createReadStream(sampleFile), '20130104/mike/blah.txt');
-		promises.push(p);
-		
-		q.all(promises).then(function() {
+test('filestore.filesAt should return files at that date', async t => {
+	await setup(async ({ sampleFile, store }) => {
+		const jobs = [];
 
-			return store.listFiles(200, function(f) { return f.owner === 'mike'; });
+		jobs.push(store.saveStreamToFile(fs.createReadStream(sampleFile), 'A/mike/blah.txt'));
+		jobs.push(store.saveStreamToFile(fs.createReadStream(sampleFile), 'B/liza/blah.txt'));
+		jobs.push(store.saveStreamToFile(fs.createReadStream(sampleFile), 'C/alice/blah.txt'));
+		jobs.push(store.saveStreamToFile(fs.createReadStream(sampleFile), 'D/mike/blah.txt'));
 
-		}).then(function(dirs) {
-		
-			expect(dirs.length).to.be(2);
-			expect(dirs[0].files.length).to.be(1);
-			expect(dirs[1].files.length).to.be(1);
-			expect(dirs[0].files[0].owner).to.be('mike');
-			expect(dirs[1].files[0].owner).to.be('mike');
-			
-			done();
-		});
+		for (const job of jobs) {
+			await job;
+		}
+
+		const a = await store.filesAt('A');
+		t.is(a.length, 1);
+		t.is(a[0].owner, 'mike');
+		t.is(a[0].fileId, 'A/mike/blah.txt');
+
+		const b = await store.filesAt('B');
+		t.is(b.length, 1);
+		t.is(b[0].owner, 'liza');
+		t.is(b[0].fileId, 'B/liza/blah.txt');
+
+		const c = await store.filesAt('C');
+		t.is(c.length, 1);
+		t.is(c[0].owner, 'alice');
+		t.is(c[0].fileId, 'C/alice/blah.txt');
+
+		const d = await store.filesAt('D');
+		t.is(d.length, 1);
+		t.is(d[0].owner, 'mike');
+		t.is(d[0].fileId, 'D/mike/blah.txt');
+
+		const e = await store.filesAt('E');
+		t.is(e.length, 0);
+	});
+});
+
+test('filestore.filesAt should allow omition of filter', async t => {
+	await setup(async ({ sampleFile, store }) => {
+		await store.saveStreamToFile(fs.createReadStream(sampleFile), 'A/mike/blah.txt');
+		const a = await store.filesAt('A');
+
+		t.is(a.length, 1);
+	});
+});
+
+test('filestore.filesAt with filter should work as expected', async t => {
+	await setup(async ({ sampleFile, store }) => {
+		await store.saveStreamToFile(fs.createReadStream(sampleFile), 'A/mike/blah.txt');
+
+		const a = await store.filesAt('A', f => f.public === false);
+		t.is(a.length, 1);
+
+		const b = await store.filesAt('A', f => f.public === true);
+		t.is(b.length, 0);
+
+		const c = await store.filesAt('A', f => f.owner === 'mike');
+		t.is(c.length, 1);
+
+		const d = await store.filesAt('A', f => f.owner === 'alice');
+		t.is(d.length, 0);
+	});
+});
+
+test('filestore.dateTree should work', async t => {
+	await setup(async ({ sampleFile, store }) => {
+		const jobs = [];
+
+		jobs.push(store.saveStreamToFile(fs.createReadStream(sampleFile), '20130101/mike/blah.txt'));
+		jobs.push(store.saveStreamToFile(fs.createReadStream(sampleFile), '20130102/liza/blah.txt'));
+		jobs.push(store.saveStreamToFile(fs.createReadStream(sampleFile), '20130103/alice/blah.txt'));
+		jobs.push(store.saveStreamToFile(fs.createReadStream(sampleFile), '20130104/mike/blah.txt'));
+
+		for (const job of jobs) {
+			await job;
+		}
+
+		const tree = await store.dateTree();
+		t.is(tree.length, 4);
+
+		const byDate = {};
+		for (const dir of tree) {
+			byDate[dir.dirId] = dir;
+		}
+
+		t.is(byDate['20130101'].files.length, 1);
+		t.is(byDate['20130101'].year, '2013');
+		t.is(byDate['20130101'].month, '01');
+		t.is(byDate['20130101'].day, '01');
+
+		t.is(byDate['20130102'].files.length, 1);
+		t.is(byDate['20130102'].year, '2013');
+		t.is(byDate['20130102'].month, '01');
+		t.is(byDate['20130102'].day, '02');
+
+		t.is(byDate['20130103'].files.length, 1);
+		t.is(byDate['20130103'].year, '2013');
+		t.is(byDate['20130103'].month, '01');
+		t.is(byDate['20130103'].day, '03');
+
+		t.is(byDate['20130104'].files.length, 1);
+		t.is(byDate['20130104'].year, '2013');
+		t.is(byDate['20130104'].month, '01');
+		t.is(byDate['20130104'].day, '04');
+	});
+});
+
+test('filestore.dateTree should not show empty directories', async t => {
+	await setup(async ({ sampleFile, store }) => {
+		await store.saveStreamToFile(fs.createReadStream(sampleFile), '20130101/mike/blah.txt');
+		await store.saveStreamToFile(fs.createReadStream(sampleFile), '20130102/liza/blah.txt');
+		await store.saveStreamToFile(fs.createReadStream(sampleFile), '20130103/alice/blah.txt');
+		await store.saveStreamToFile(fs.createReadStream(sampleFile), '20130104/mike/blah.txt');
+
+		await store.deleteFile('20130102/liza/blah.txt');
+
+		const tree = await store.dateTree();
+
+		t.is(tree.length, 3);
+
+		const byDate = {};
+		for (const dir of tree) {
+			byDate[dir.dirId] = dir;
+		}
+
+		t.is(byDate['20130101'].files.length, 1);
+		t.is(byDate['20130101'].year, '2013');
+		t.is(byDate['20130101'].month, '01');
+		t.is(byDate['20130101'].day, '01');
+
+		t.is(byDate['20130103'].files.length, 1);
+		t.is(byDate['20130103'].year, '2013');
+		t.is(byDate['20130103'].month, '01');
+		t.is(byDate['20130103'].day, '03');
+
+		t.is(byDate['20130104'].files.length, 1);
+		t.is(byDate['20130104'].year, '2013');
+		t.is(byDate['20130104'].month, '01');
+		t.is(byDate['20130104'].day, '04');
+	});
+});
+
+test('filestore.listFiles should list files newest first', async t => {
+	await setup(async ({ sampleFile, store }) => {
+		await store.saveStreamToFile(fs.createReadStream(sampleFile), '20130101/mike/blah.txt');
+		await store.saveStreamToFile(fs.createReadStream(sampleFile), '20130102/liza/blah.txt');
+		await store.saveStreamToFile(fs.createReadStream(sampleFile), '20130103/alice/blah.txt');
+		await store.saveStreamToFile(fs.createReadStream(sampleFile), '20130104/mike/blah.txt');
+
+		{
+			const dirs = await store.listFiles(1, x => true);
+			t.is(dirs.length, 1);
+			t.is(dirs[0].dirId, '20130104');
+			t.is(dirs[0].year, '2013');
+			t.is(dirs[0].month, '01');
+			t.is(dirs[0].day, '04');
+			t.is(dirs[0].files.length, 1);
+			t.is(dirs[0].files[0].fileId, '20130104/mike/blah.txt');
+		}
+
+		{
+			const dirs = await store.listFiles(1, x => true, '20130104');
+			t.is(dirs.length, 1);
+			t.is(dirs[0].dirId, '20130103');
+			t.is(dirs[0].year, '2013');
+			t.is(dirs[0].month, '01');
+			t.is(dirs[0].day, '03');
+			t.is(dirs[0].files.length, 1);
+			t.is(dirs[0].files[0].fileId, '20130103/alice/blah.txt');
+		}
+
+		{
+			const dirs = await store.listFiles(1, x => true, '20130103');
+			t.is(dirs.length, 1);
+			t.is(dirs[0].dirId, '20130102');
+			t.is(dirs[0].year, '2013');
+			t.is(dirs[0].month, '01');
+			t.is(dirs[0].day, '02');
+			t.is(dirs[0].files.length, 1);
+			t.is(dirs[0].files[0].fileId, '20130102/liza/blah.txt');
+		}
+
+		{
+			const dirs = await store.listFiles(1, x => true, '20130102');
+			t.is(dirs.length, 1);
+			t.is(dirs[0].dirId, '20130101');
+			t.is(dirs[0].year, '2013');
+			t.is(dirs[0].month, '01');
+			t.is(dirs[0].day, '01');
+			t.is(dirs[0].files.length, 1);
+			t.is(dirs[0].files[0].fileId, '20130101/mike/blah.txt');
+		}
+		{
+			const dirs = await store.listFiles(1, x => true, '20130101');
+			t.is(dirs.length, 0);
+		}
+	});
+});
+
+test('filestore.listFiles should support filtering', async t => {
+	await setup(async ({ sampleFile, store }) => {
+		await store.saveStreamToFile(fs.createReadStream(sampleFile), '20130101/mike/blah.txt');
+		await store.saveStreamToFile(fs.createReadStream(sampleFile), '20130102/liza/blah.txt');
+		await store.saveStreamToFile(fs.createReadStream(sampleFile), '20130103/alice/blah.txt');
+		await store.saveStreamToFile(fs.createReadStream(sampleFile), '20130104/mike/blah.txt');
+
+		const dirs = await store.listFiles(200, f => f.owner === 'mike');
+
+		t.is(dirs.length, 2);
+		t.is(dirs[0].files.length, 1);
+		t.is(dirs[1].files.length, 1);
+		t.is(dirs[0].files[0].owner, 'mike');
+		t.is(dirs[1].files[0].owner, 'mike');
 	});
 });

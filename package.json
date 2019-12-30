@@ -9,26 +9,30 @@
   },
   "private": true,
   "dependencies": {
-    "process": "~0.5.1",
+    "busboy": "~0.0.12",
     "express": "~3.4.4",
     "jade": "~0.35.0",
-    "q": "~0.9.7",
-    "busboy": "~0.0.12"
+    "ngrok": "^3.2.7",
+    "process": "~0.5.1",
+    "q": "~0.9.7"
   },
   "devDependencies": {
+    "ava": "^2.4.0",
+    "expect.js": "~0.2.0",
     "grunt": "~0.4.1",
     "grunt-contrib-clean": "~0.5.0",
     "grunt-contrib-concat": "~0.3.0",
     "grunt-contrib-copy": "~0.4.1",
+    "grunt-contrib-jasmine": "~0.5.2",
     "grunt-contrib-jshint": "~0.7.1",
     "grunt-contrib-uglify": "~0.2.7",
-    "grunt-contrib-jasmine": "~0.5.2",
-    "mocha": "~1.4.0",
     "grunt-mocha": "~0.4.7",
     "grunt-mocha-test": "~0.8.1",
     "grunt-ngdocs": "~0.1.7",
-    "expect.js": "~0.2.0",
-    "tmp": "0.0.23"
+    "jshint": "^2.11.0-rc1",
+    "mocha": "~1.4.0",
+    "tmp": "0.0.23",
+    "tmp-promise": "^2.0.2"
   },
   "scripts": {
     "test": "mocha --reporter spec"
